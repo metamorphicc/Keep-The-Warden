@@ -65,10 +65,51 @@ Useful during development:
 
 ---
 
+## Deploying to Vercel
+
+The game is a static bundle — no server, no database, no API routes — so Vercel
+needs nothing but the repo. [vercel.json](vercel.json) pins the build so the
+dashboard has nothing to guess:
+
+- `framework: "vite"`, `buildCommand: "npm run build"`, `outputDirectory: "dist"`
+- hashed files under `/assets/` get a one-year `immutable` cache
+- `index.html` is `max-age=0, must-revalidate`, so a new deploy actually reaches
+  players instead of sitting behind a stale WebView cache
+
+**From the dashboard (recommended — every push to `main` redeploys):**
+
+1. [vercel.com/new](https://vercel.com/new) → **Import Git Repository** → this repo.
+2. Leave every field alone. The framework preset, build command and output
+   directory all come from `vercel.json`.
+3. **Deploy.** You get `https://<project>.vercel.app`.
+
+**From the CLI, if you would rather not connect Git:**
+
+```bash
+npx vercel --prod
+```
+
+First run asks you to log in and links the folder to a project; after that the
+same command redeploys. It uploads the working directory, so commit or stash
+anything you do not want shipped.
+
+Notes that matter for Telegram specifically:
+
+- **No `X-Frame-Options`.** Telegram Desktop and Web embed the Mini App in an
+  iframe; sending that header (or a strict `frame-ancestors`) shows players a
+  blank rectangle. `vercel.json` deliberately sets neither.
+- **Deployment Protection.** If you enable Vercel Authentication for
+  *production*, Telegram's WebView hits an SSO wall it cannot pass. Preview-only
+  protection (the default) is fine.
+- Nothing in the game is secret and there are no environment variables — the
+  save file lives in the player's own `localStorage`.
+
+---
+
 ## Attaching it to a bot in BotFather
 
-Telegram will only load a Mini App over **HTTPS**. For local development, tunnel
-the dev server first:
+Telegram will only load a Mini App over **HTTPS**. Production is the Vercel URL
+above. For local development against the real client, tunnel the dev server:
 
 ```bash
 npx cloudflared tunnel --url http://localhost:5173
@@ -94,8 +135,9 @@ Then, in Telegram:
 3. Open that `t.me` link, or `/setmenubutton` → your bot → **Edit menu button
    URL** to put the game behind the chat's menu button.
 
-To go live, host `dist/` anywhere with HTTPS and point the Web App URL at it —
-`/setmenubutton` and the `/newapp` URL can both be edited later from BotFather.
+To go live, point the Web App URL at your Vercel deployment — `/setmenubutton`
+and the `/newapp` URL can both be edited later from BotFather (`/myapps` → the
+app → **Edit Web App URL**).
 
 ### What the app asks of Telegram
 
@@ -120,6 +162,7 @@ Every one of those is feature-detected; older clients simply skip them.
 .
 ├── index.html                 # viewport-fit=cover, theme colour, Telegram bridge, pixel fonts
 ├── vite.config.ts             # base './', LAN host, allowedHosts for tunnels
+├── vercel.json                # static deploy: vite preset, asset caching, no frame blocking
 ├── tsconfig.json              # strict, noUnusedLocals/Parameters
 └── src
     ├── main.tsx               # mount + stylesheet imports
