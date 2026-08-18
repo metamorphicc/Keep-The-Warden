@@ -1,0 +1,683 @@
+/* ==========================================================================
+   SCREEN LAYOUTS
+   Mobile-first, 390x844 baseline. Nothing scrolls except .screen__body, and
+   the main room does not scroll at all.
+   ========================================================================== */
+
+.screen__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.screen__foot {
+  padding: 2px 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   Item grids
+   -------------------------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  gap: 6px;
+}
+
+.grid--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.grid--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* --------------------------------------------------------------------------
+   Detail lists (need deltas, tallies)
+   -------------------------------------------------------------------------- */
+
+.detail__desc {
+  padding: 0 0 8px;
+  line-height: 1.5;
+  color: var(--bone);
+}
+
+.detail__gains {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 0 10px;
+}
+
+.detail__gains li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 5px;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 0 0 rgba(255, 235, 190, 0.05);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bone-dim);
+}
+
+.detail__gains li span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail__gains li b {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--bone);
+}
+
+.detail__gains li.is-up b {
+  color: var(--teal-lit);
+}
+.detail__gains li.is-down b {
+  color: var(--ember-lit);
+}
+
+.tally li {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.empty-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px 10px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Tabs
+   -------------------------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.tab {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 6px 4px;
+  background-color: #191009;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0 2px,
+    rgba(0, 0, 0, 0) 2px 4px
+  );
+  border: var(--bd) solid var(--ink);
+  color: var(--bone-deep);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 1px 1px 0 var(--ink);
+  box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+.tab.is-on {
+  background-color: var(--wood);
+  background-image: var(--tex-plank);
+  color: var(--gold-lit);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.18),
+    inset 0 -3px 0 0 var(--gold-dark);
+}
+
+.tab span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   BOOT / TITLE
+   ========================================================================== */
+
+.boot {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 18px 16px calc(14px + var(--sa-bottom));
+  background-color: #0c0806;
+  background-image:
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0 2px, rgba(0, 0, 0, 0) 2px 4px),
+    var(--tex-plank-dark);
+  overflow: hidden;
+}
+
+.boot__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 4px var(--ink),
+    inset 0 0 60px 30px rgba(0, 0, 0, 0.75);
+}
+
+.boot__top {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.boot__eyebrow {
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  color: var(--ember-pale);
+}
+
+.boot__title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-title);
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--gold-lit);
+  text-align: center;
+  text-shadow:
+    2px 2px 0 var(--ink),
+    3px 3px 0 rgba(0, 0, 0, 0.6),
+    0 0 0 var(--ink);
+}
+
+.boot__title-small {
+  font-size: 10px;
+  color: var(--bone-dim);
+  letter-spacing: 0.3em;
+}
+
+.boot__rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 190px;
+}
+
+.boot__rule span {
+  flex: 1;
+  height: 3px;
+  background: var(--gold-dark);
+  box-shadow: 0 2px 0 0 var(--ink);
+}
+
+.boot__art {
+  position: relative;
+  flex: 0 1 auto;
+  width: 264px;
+  max-width: 100%;
+  height: auto;
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    0 4px 0 0 rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(255, 235, 190, 0.06);
+}
+
+.boot__bottom {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.boot__line {
+  min-height: 34px;
+  padding: 0 6px;
+  line-height: 1.5;
+  color: var(--bone-dim);
+}
+
+.boot__away {
+  margin-top: -2px;
+}
+
+.boot__version {
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--bone-deep);
+}
+
+/* ==========================================================================
+   MAIN ROOM
+   ========================================================================== */
+
+.room {
+  background: #0a0705;
+}
+
+.room__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background-color: var(--wood-deep);
+  background-image: var(--tex-plank-dark);
+  border-bottom: var(--bd) solid var(--ink);
+  box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0.45);
+  flex: 0 0 auto;
+}
+
+.room__bar .ribbon {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.room__day {
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  flex: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --- the stage: canvas + overlays --- */
+
+.room__stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 168px;
+  overflow: hidden;
+  background: #080604;
+  border-bottom: var(--bd) solid var(--ink);
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* anchored to the bottom so the floor and the warden are never cropped */
+.stage__canvas {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-left: 0;
+  display: block;
+  will-change: transform;
+}
+
+.room__hero-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 7px;
+  background: rgba(8, 5, 4, 0.82);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 2px 0 0 rgba(255, 235, 190, 0.09);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.room__hero-tag .t-label {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+.room__speech {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.room__speech .speech {
+  background-color: rgba(15, 10, 7, 0.94);
+}
+
+/* --- HUD --- */
+
+.room__hud {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px;
+  background-color: #14100c;
+  background-image: var(--tex-plank-dark);
+}
+
+.room__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.room__actions {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.room__actions .btn {
+  padding: 6px 2px;
+  min-height: 58px;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+
+.room__actions .btn__sub {
+  font-size: 7px;
+  letter-spacing: 0;
+}
+
+.room__nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.navbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 5px 4px;
+  background-color: #1c130c;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0 2px,
+    rgba(0, 0, 0, 0) 2px 4px
+  );
+  border: 2px solid var(--ink);
+  color: var(--bone-dim);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 1px 1px 0 var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.09),
+    0 3px 0 0 var(--ink);
+}
+
+.navbtn:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 0 0 rgba(255, 235, 190, 0.06);
+}
+
+/* ==========================================================================
+   WARDROBE
+   ========================================================================== */
+
+.wardrobe__preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  background: #0e0a07;
+}
+
+.wardrobe__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.wardrobe__plate {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background-color: var(--wood-deep);
+  background-image: var(--tex-plank-dark);
+  border-top: var(--bd) solid var(--ink);
+  text-align: center;
+}
+
+.wardrobe__plate .t-label {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   TRAINING PIT
+   ========================================================================== */
+
+.train {
+  gap: 8px;
+}
+
+.train__stage {
+  position: relative;
+  align-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: hidden;
+  background: #0b0806;
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 235, 190, 0.05),
+    0 4px 0 0 rgba(0, 0, 0, 0.55);
+  flex: 0 0 auto;
+}
+
+.train__canvas {
+  display: block;
+  touch-action: manipulation;
+}
+
+.train__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  pointer-events: none;
+}
+
+.train__big {
+  font-size: 13px;
+  color: var(--gold-lit);
+  text-align: center;
+}
+
+.train__meters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.train__stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.train__stats .t-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+}
+
+.train__stats b {
+  font-weight: 400;
+  color: var(--bone);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   SETTINGS
+   ========================================================================== */
+
+.toggles {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 7px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 2px 0 0 rgba(255, 235, 190, 0.06);
+  text-align: left;
+}
+
+.toggle__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.toggle__text b {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--bone-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.toggle__text small {
+  font-size: 9px;
+  color: var(--bone-deep);
+  letter-spacing: 0.02em;
+}
+
+.toggle.is-on .toggle__text b {
+  color: var(--gold-lit);
+}
+
+.toggle__switch {
+  position: relative;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 18px;
+  background: #0d0a07;
+  border: 2px solid var(--ink);
+  box-shadow: inset 0 2px 0 0 rgba(0, 0, 0, 0.6);
+}
+
+.toggle__knob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 15px;
+  height: 14px;
+  background: var(--stone);
+  box-shadow:
+    inset 0 2px 0 0 var(--stone-hi),
+    inset 0 -2px 0 0 var(--stone-deep);
+  transition: left 90ms steps(3, end);
+}
+
+.toggle.is-on .toggle__switch {
+  background: var(--teal-deep);
+}
+
+.toggle.is-on .toggle__knob {
+  left: 15px;
+  background: var(--gold);
+  box-shadow:
+    inset 0 2px 0 0 var(--gold-lit),
+    inset 0 -2px 0 0 var(--gold-dark);
+}
+
+/* ==========================================================================
+   Short screens: give the stage priority, shrink the chrome. The nav row
+   stays — it is the only way to reach the Market, the Regalia and the Keep.
+   ========================================================================== */
+
+@media (max-height: 700px) {
+  .room__stage {
+    min-height: 140px;
+  }
+  .room__hud {
+    gap: 5px;
+    padding: 6px;
+  }
+  .room__actions .btn {
+    min-height: 50px;
+  }
+  .navbtn {
+    min-height: 34px;
+    padding: 4px 3px;
+    font-size: 8px;
+    letter-spacing: 0.06em;
+  }
+  .boot__title {
+    font-size: 18px;
+  }
+}
+
+/* Landscape phones and other very short viewports: decoration goes first. */
+@media (max-height: 560px) {
+  .room__stage {
+    min-height: 104px;
+  }
+  .room__actions .btn {
+    min-height: 44px;
+    padding: 4px 2px;
+  }
+  .room__hero-tag {
+    display: none;
+  }
+}
+
+@media (min-width: 440px) {
+  .room__stage {
+    min-height: 220px;
+  }
+}

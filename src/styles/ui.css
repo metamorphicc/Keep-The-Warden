@@ -1,0 +1,788 @@
+/* ==========================================================================
+   UI KIT — panels, ribbons, bars, buttons, slots
+   Rules: 3px ink borders, hard bevels, plank/stone textures, zero radius,
+   zero blur. Every measurement is even so it lands on the pixel grid.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Panel
+   -------------------------------------------------------------------------- */
+
+.panel {
+  position: relative;
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 226, 170, 0.13),
+    inset 2px 0 0 0 rgba(255, 226, 170, 0.06),
+    inset -2px 0 0 0 rgba(0, 0, 0, 0.4),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.5),
+    0 4px 0 0 rgba(0, 0, 0, 0.55);
+}
+
+.panel--wood {
+  background-color: var(--wood);
+  background-image: var(--tex-plank);
+}
+
+.panel--darkwood {
+  background-color: var(--wood-dark);
+  background-image: var(--tex-plank-dark);
+}
+
+.panel--stone {
+  background-color: var(--stone);
+  background-image: var(--tex-stone);
+}
+
+.panel--ink {
+  background-color: #17100b;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0 2px,
+    rgba(0, 0, 0, 0) 2px 4px
+  );
+}
+
+.panel__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background-color: var(--wood-deep);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.25) 0 2px,
+    rgba(0, 0, 0, 0) 2px 6px
+  );
+  border-bottom: var(--bd) solid var(--ink);
+  box-shadow: inset 0 2px 0 0 rgba(255, 226, 170, 0.1);
+}
+
+.panel__title {
+  font-size: 9px;
+  color: var(--gold-lit);
+  text-shadow: 1px 1px 0 var(--ink);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel__head-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.panel__body--none {
+  padding: 0;
+}
+.panel__body--sm {
+  padding: 6px;
+}
+.panel__body--md {
+  padding: 10px;
+}
+
+/* corner studs */
+.panel__rivet {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--gold);
+  box-shadow:
+    inset -2px -2px 0 0 var(--gold-dark),
+    inset 2px 2px 0 0 var(--gold-lit),
+    0 0 0 1px var(--ink);
+  z-index: 2;
+}
+.panel__rivet--tl {
+  top: 3px;
+  left: 3px;
+}
+.panel__rivet--tr {
+  top: 3px;
+  right: 3px;
+}
+.panel__rivet--bl {
+  bottom: 3px;
+  left: 3px;
+}
+.panel__rivet--br {
+  bottom: 3px;
+  right: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   Ribbon
+   -------------------------------------------------------------------------- */
+
+.ribbon {
+  display: inline-flex;
+  align-items: stretch;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.6));
+  min-width: 0;
+}
+
+.ribbon__body {
+  padding: 6px 10px;
+  border-top: var(--bd) solid var(--ink);
+  border-bottom: var(--bd) solid var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ribbon__tail {
+  width: 12px;
+  flex: 0 0 12px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 55% 50%);
+}
+
+.ribbon__tail--l {
+  clip-path: polygon(100% 0, 100% 100%, 0 100%, 45% 50%, 0 0);
+}
+
+.ribbon--gold .ribbon__body {
+  background-color: var(--blood);
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0 2px,
+    rgba(0, 0, 0, 0.12) 2px 4px
+  );
+  box-shadow:
+    inset 0 2px 0 0 var(--blood-lit),
+    inset 0 -3px 0 0 var(--blood-deep);
+  color: var(--gold-lit);
+}
+.ribbon--gold .ribbon__tail {
+  background: var(--blood-deep);
+  box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.ribbon--blood .ribbon__body {
+  background: var(--blood-deep);
+  box-shadow: inset 0 2px 0 0 var(--blood);
+  color: var(--bone);
+}
+.ribbon--blood .ribbon__tail {
+  background: #33100e;
+}
+
+.ribbon--dark .ribbon__body {
+  background: var(--stone-deep);
+  box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.07);
+  color: var(--bone-dim);
+}
+.ribbon--dark .ribbon__tail {
+  background: #141110;
+}
+
+.ribbon--sm .ribbon__body {
+  font-size: 8px;
+  padding: 5px 8px;
+}
+.ribbon--md .ribbon__body {
+  font-size: 11px;
+}
+.ribbon--lg .ribbon__body {
+  font-size: 16px;
+  padding: 10px 14px;
+}
+.ribbon--lg .ribbon__tail {
+  width: 16px;
+  flex-basis: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   Stat bar
+   -------------------------------------------------------------------------- */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.bar__label {
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bone-dim);
+  width: 40px;
+  flex: 0 0 40px;
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.bar__track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 12px;
+  background: #17130f;
+  border: 2px solid var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(0, 0, 0, 0.6),
+    inset 0 -1px 0 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.bar--sm .bar__track {
+  height: 8px;
+}
+
+.bar__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  /* stepped, not smooth — matches the 5% quantised value */
+  transition: width 120ms steps(4, end);
+}
+
+.bar__notches {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0) 0 calc(10% - 2px),
+    rgba(0, 0, 0, 0.55) calc(10% - 2px) 10%
+  );
+}
+
+.bar__value {
+  font-size: 9px;
+  color: var(--bone);
+  width: 22px;
+  flex: 0 0 22px;
+  text-align: right;
+  text-shadow: 1px 1px 0 var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar--low .bar__fill {
+  animation: kw-blink 700ms steps(2, end) infinite;
+}
+.bar--low .bar__value {
+  color: var(--ember-lit);
+}
+
+/* --------------------------------------------------------------------------
+   Button
+   -------------------------------------------------------------------------- */
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  min-height: 44px;
+  border: var(--bd) solid var(--ink);
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: 1px 1px 0 var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.18),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
+    0 4px 0 0 var(--ink);
+  transform: translateY(0);
+}
+
+.btn:active:not(.is-disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.1),
+    inset 0 -2px 0 0 rgba(0, 0, 0, 0.45),
+    0 0 0 0 var(--ink);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn--sm {
+  min-height: 34px;
+  padding: 6px 8px;
+  font-size: 9px;
+}
+
+.btn--lg {
+  min-height: 56px;
+  font-size: 13px;
+  padding: 12px 16px;
+}
+
+.btn--stack {
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 4px;
+  min-height: 62px;
+}
+
+.btn__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.btn__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.btn__sub {
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: var(--bone-dim);
+  text-transform: none;
+}
+
+.btn__price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--gold-lit);
+  padding-left: 4px;
+}
+
+.btn__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  background: var(--blood);
+  border: 2px solid var(--ink);
+  color: var(--bone);
+  font-size: 9px;
+  line-height: 12px;
+  text-align: center;
+  z-index: 3;
+}
+
+/* variants */
+.btn--wood {
+  background-color: var(--wood);
+  background-image: var(--tex-plank);
+}
+.btn--gold {
+  background-color: #a8761f;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1) 0 2px,
+    rgba(0, 0, 0, 0.1) 2px 4px
+  );
+  color: #1d1206;
+  text-shadow: 1px 1px 0 rgba(255, 235, 190, 0.35);
+}
+.btn--gold .btn__sub {
+  color: #4a2f0c;
+}
+.btn--ember {
+  background-color: var(--ember-deep);
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 155, 61, 0.22) 0 2px,
+    rgba(0, 0, 0, 0.12) 2px 4px
+  );
+}
+.btn--teal {
+  background-color: var(--teal-deep);
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(111, 189, 174, 0.16) 0 2px,
+    rgba(0, 0, 0, 0.12) 2px 4px
+  );
+}
+.btn--danger {
+  background-color: var(--blood-deep);
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(169, 56, 44, 0.3) 0 2px,
+    rgba(0, 0, 0, 0.14) 2px 4px
+  );
+}
+.btn--ghost {
+  background-color: #1a1512;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0 2px,
+    rgba(0, 0, 0, 0) 2px 4px
+  );
+  color: var(--bone-dim);
+}
+
+.btn.is-disabled {
+  cursor: default;
+  filter: grayscale(0.65) brightness(0.6);
+  color: var(--bone-deep);
+}
+
+/* --------------------------------------------------------------------------
+   Item slot
+   -------------------------------------------------------------------------- */
+
+.slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  background: none;
+  min-width: 0;
+}
+
+.slot__inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: var(--stone-dark);
+  background-image:
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0 2px, rgba(0, 0, 0, 0.1) 2px 4px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 8px, rgba(0, 0, 0, 0) 8px 16px);
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    inset 0 3px 0 0 rgba(0, 0, 0, 0.55),
+    inset 0 -2px 0 0 rgba(255, 235, 190, 0.07),
+    inset 3px 0 0 0 rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.slot--sm {
+  width: 44px;
+}
+.slot--md {
+  width: 100%;
+}
+.slot--lg {
+  width: 100%;
+}
+
+.slot__label {
+  font-size: 8px;
+  line-height: 1.25;
+  color: var(--bone-dim);
+  text-align: center;
+  text-shadow: 1px 1px 0 var(--ink);
+  width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.slot.is-selected .slot__inner {
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 0 0 2px var(--gold-dark),
+    inset 0 3px 0 0 rgba(0, 0, 0, 0.4),
+    0 0 0 2px rgba(217, 161, 50, 0.25);
+}
+.slot.is-selected .slot__label {
+  color: var(--gold-lit);
+}
+
+.slot:active .slot__inner {
+  transform: translateY(2px);
+}
+
+.slot.is-locked .slot__icon {
+  filter: grayscale(1) brightness(0.45);
+}
+
+.slot__chain {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 50%;
+  height: 10px;
+  margin-top: -5px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #6e6357 0 4px,
+    #1e1a17 4px 6px,
+    #453d36 6px 10px,
+    #0c0806 10px 12px
+  );
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 -2px 0 0 rgba(0, 0, 0, 0.6);
+}
+
+.slot__lock {
+  position: absolute;
+  inset: auto auto 3px 3px;
+}
+
+.slot.is-locked .slot__inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 4, 3, 0.55);
+}
+
+.slot__equipped {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 1px;
+  background: var(--ink);
+  z-index: 2;
+}
+
+.slot__count {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  min-width: 15px;
+  padding: 0 3px;
+  background: var(--ink);
+  border-left: 2px solid var(--wood-lit);
+  border-top: 2px solid var(--wood-lit);
+  color: var(--bone);
+  font-size: 9px;
+  line-height: 13px;
+  text-align: center;
+  z-index: 2;
+}
+
+.slot__price {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 9px;
+  color: var(--gold-lit);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.slot__empty-mark {
+  color: var(--bone-deep);
+  font-size: 14px;
+}
+
+.slot.is-empty .slot__inner {
+  border-style: dashed;
+  border-color: #3a2d24;
+}
+
+/* --------------------------------------------------------------------------
+   Currency counters
+   -------------------------------------------------------------------------- */
+
+.cur {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.cur__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background: #17100b;
+  border: 2px solid var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.08),
+    inset 0 -2px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+.cur__item b {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--bone);
+  text-shadow: 1px 1px 0 var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.cur--compact .cur__item {
+  padding: 2px 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Speech plaque
+   -------------------------------------------------------------------------- */
+
+.speech {
+  position: relative;
+  padding: 7px 10px;
+  background-color: #150f0a;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.035) 0 2px,
+    rgba(0, 0, 0, 0) 2px 4px
+  );
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.09),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.5),
+    inset 3px 0 0 0 var(--gold-dark);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.speech__nib {
+  position: absolute;
+  top: -9px;
+  left: 22px;
+  width: 12px;
+  height: 6px;
+  background: #150f0a;
+  border: var(--bd) solid var(--ink);
+  border-bottom: 0;
+  clip-path: polygon(0 100%, 30% 0, 70% 0, 100% 100%);
+}
+
+.speech__text {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--bone);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+/* --------------------------------------------------------------------------
+   Floating labels
+   -------------------------------------------------------------------------- */
+
+.floaters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 6;
+}
+
+.floater {
+  position: absolute;
+  transform: translate(-50%, 0);
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-shadow:
+    1px 1px 0 var(--ink),
+    -1px 1px 0 var(--ink),
+    1px -1px 0 var(--ink),
+    -1px -1px 0 var(--ink);
+  animation: kw-rise 1150ms steps(12, end) both;
+}
+
+.floater--good {
+  color: var(--teal-lit);
+}
+.floater--bad {
+  color: var(--ember-lit);
+}
+.floater--coin {
+  color: var(--gold-lit);
+}
+.floater--shard {
+  color: var(--spirit-lit);
+}
+.floater--plain {
+  color: var(--bone);
+}
+
+/* --------------------------------------------------------------------------
+   Modal
+   -------------------------------------------------------------------------- */
+
+.modal {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 4, 3, 0.8);
+}
+
+.modal__panel {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.modal__body {
+  padding: 4px 2px 12px;
+  line-height: 1.5;
+  color: var(--bone);
+}
+
+.modal__actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Sub-screen header
+   -------------------------------------------------------------------------- */
+
+.shead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background-color: var(--wood-deep);
+  background-image: var(--tex-plank-dark);
+  border-bottom: var(--bd) solid var(--ink);
+  box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0.45);
+  flex: 0 0 auto;
+}
+
+.shead__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  background-color: var(--wood);
+  background-image: var(--tex-plank);
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.16),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
+    0 3px 0 0 var(--ink);
+}
+
+.shead__back:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 2px 0 0 rgba(255, 235, 190, 0.1);
+}
+
+.shead .ribbon {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.shead__spacer {
+  flex: 0 0 24px;
+}

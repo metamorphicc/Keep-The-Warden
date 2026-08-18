@@ -1,0 +1,102 @@
+/* ==========================================================================
+   Design tokens — mirrors src/styles/palette.ts
+   Chunky 16-bit dungeon UI. Hard edges only: no border-radius anywhere,
+   no soft shadows, no SaaS gradients.
+   ========================================================================== */
+
+:root {
+  /* darks */
+  --ink: #0c0806;
+  --ink-2: #150d09;
+  --shadow: #1b110b;
+
+  /* wood */
+  --wood-deep: #241610;
+  --wood-dark: #33200f;
+  --wood: #4a2f1e;
+  --wood-lit: #6b4429;
+  --wood-hi: #8a5a35;
+
+  /* stone */
+  --stone-deep: #1e1a17;
+  --stone-dark: #2b2622;
+  --stone: #453d36;
+  --stone-lit: #5d5349;
+  --stone-hi: #7a6e60;
+
+  /* gold */
+  --gold-dark: #8a6018;
+  --gold: #d9a132;
+  --gold-lit: #f2cf6a;
+
+  /* ember */
+  --ember-deep: #8c3211;
+  --ember: #e2622a;
+  --ember-lit: #ff9b3d;
+  --ember-pale: #ffd18a;
+
+  /* teal */
+  --teal-deep: #16332f;
+  --teal: #3f8a80;
+  --teal-lit: #6fbdae;
+
+  /* spirit */
+  --spirit-deep: #1c4a63;
+  --spirit: #4aa8d8;
+  --spirit-lit: #6fd3e8;
+  --spirit-pale: #c8f4ff;
+
+  /* bone / text */
+  --bone: #e8dfc8;
+  --bone-dim: #b9ae94;
+  --bone-deep: #7d7461;
+
+  /* blood */
+  --blood-deep: #4a1714;
+  --blood: #7d2b24;
+  --blood-lit: #a9382c;
+
+  /* fonts */
+  --font-title: 'Press Start 2P', 'Silkscreen', ui-monospace, monospace;
+  --font-ui: 'Silkscreen', 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+
+  /* geometry — everything is a multiple of 2px so it stays on the pixel grid */
+  --bd: 3px; /* standard frame border */
+  --px: 2px;
+
+  /* safe areas: env() for browsers, overridden from JS with Telegram's
+     reported insets when running inside the Telegram client. */
+  --sa-top: env(safe-area-inset-top, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left: env(safe-area-inset-left, 0px);
+  --sa-right: env(safe-area-inset-right, 0px);
+
+  /* set from JS: Telegram viewportStableHeight, falls back to dvh */
+  --app-h: 100dvh;
+
+  /* textures ------------------------------------------------------------- */
+  --tex-plank: repeating-linear-gradient(
+      180deg,
+      #4a2f1e 0 7px,
+      #452b1b 7px 8px,
+      #3a2416 8px 9px,
+      #4d3120 9px 16px
+    ),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 13px, rgba(0, 0, 0, 0.22) 13px 15px);
+
+  --tex-plank-dark: repeating-linear-gradient(
+      180deg,
+      #33200f 0 7px,
+      #2c1b0d 7px 8px,
+      #251708 8px 9px,
+      #35220f 9px 16px
+    ),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 11px, rgba(0, 0, 0, 0.25) 11px 13px);
+
+  --tex-stone: repeating-linear-gradient(
+      180deg,
+      #453d36 0 9px,
+      #3b342e 9px 11px
+    ),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 15px, rgba(0, 0, 0, 0.18) 15px 17px);
+}
