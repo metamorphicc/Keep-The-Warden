@@ -4,17 +4,21 @@
  * React refs and canvas details.
  */
 
+/**
+ * Particle kinds are named after the art, not the verb, because the art has not
+ * changed: the same brown flecks that used to be crumbs are now torn notes.
+ */
 export type ParticleKind =
-  | 'spark' // blue spirit sparks (tap / blade flash)
-  | 'ember' // orange embers (fire, training)
-  | 'dust' // grey motes (idle room, footsteps)
-  | 'suds' // teal bubbles (washing)
-  | 'crumb' // brown bits (eating)
-  | 'zzz' // sleep marks
-  | 'straw' // yellow straw (hitting the dummy)
-  | 'coin' // gold flecks (reward)
+  | 'spark' // blue sparks (checking the book, edge)
+  | 'ember' // orange embers (fire, heat, a bad fill)
+  | 'dust' // grey motes (idle room)
+  | 'suds' // teal bubbles (hedging)
+  | 'crumb' // brown bits (torn notes, research)
+  | 'zzz' // sleep marks (recovering)
+  | 'straw' // pale flecks (a resolved ticket)
+  | 'coin' // gold flecks (a payout)
 
-export type FloatTone = 'good' | 'bad' | 'coin' | 'shard' | 'plain'
+export type FloatTone = 'good' | 'bad' | 'cash' | 'credit' | 'plain'
 
 export type FxEvent =
   | {
@@ -58,4 +62,37 @@ export function burst(
 
 export function floatText(text: string, tone: FloatTone = 'plain'): void {
   emitFx({ type: 'float', text, tone })
+}
+
+/* ==========================================================================
+   Toasts
+
+   A separate bus, because the floating labels live inside the room's stage and
+   toasts have to survive on every screen — the bet screen in particular, which
+   is where the grim one-liners actually land.
+   ========================================================================== */
+
+export type ToastTone = 'good' | 'bad' | 'plain'
+
+export interface ToastEvent {
+  id: number
+  text: string
+  tone: ToastTone
+  /** optional second line: the money, usually */
+  sub?: string
+}
+
+type ToastHandler = (t: ToastEvent) => void
+
+const toastHandlers = new Set<ToastHandler>()
+let toastId = 1
+
+export function onToast(handler: ToastHandler): () => void {
+  toastHandlers.add(handler)
+  return () => toastHandlers.delete(handler)
+}
+
+export function toast(text: string, tone: ToastTone = 'plain', sub?: string): void {
+  const event: ToastEvent = { id: toastId++, text, tone, sub }
+  for (const h of toastHandlers) h(event)
 }

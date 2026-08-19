@@ -1,14 +1,16 @@
 import { useEffect } from 'react'
+import { Toast } from './components/Toast'
 import { saveNow, syncFromCloud } from './game/actions'
 import { tick, useGame } from './game/store'
+import { BetScreen } from './screens/BetScreen'
 import { BootScreen } from './screens/BootScreen'
-import { FeedScreen } from './screens/FeedScreen'
 import { ProfileScreen } from './screens/ProfileScreen'
+import { ResearchScreen } from './screens/ResearchScreen'
+import { RigScreen } from './screens/RigScreen'
 import { RoomScreen } from './screens/RoomScreen'
+import { ScanScreen } from './screens/ScanScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { ShopScreen } from './screens/ShopScreen'
-import { TrainScreen } from './screens/TrainScreen'
-import { WardrobeScreen } from './screens/WardrobeScreen'
 import { initTelegram } from './telegram/telegram'
 
 /* ==========================================================================
@@ -58,12 +60,14 @@ export function App() {
       <div className="scanlines" aria-hidden="true" />
       {screen === 'boot' ? <BootScreen /> : null}
       {screen === 'room' ? <RoomScreen /> : null}
-      {screen === 'feed' ? <FeedScreen /> : null}
-      {screen === 'wardrobe' ? <WardrobeScreen /> : null}
-      {screen === 'train' ? <TrainScreen /> : null}
+      {screen === 'research' ? <ResearchScreen /> : null}
+      {screen === 'rig' ? <RigScreen /> : null}
+      {screen === 'scan' ? <ScanScreen /> : null}
+      {screen === 'bet' ? <BetScreen /> : null}
       {screen === 'shop' ? <ShopScreen /> : null}
       {screen === 'profile' ? <ProfileScreen /> : null}
       {screen === 'settings' ? <SettingsScreen /> : null}
+      <Toast />
     </div>
   )
 }

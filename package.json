@@ -1,9 +1,9 @@
 {
-  "name": "keep-the-warden",
+  "name": "quantum-pit",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "description": "Keep The Warden - a pixel-art care/idle Telegram Mini App",
+  "description": "Quantum Pit - a pixel-art Polymarket trader simulator (paper trading only) as a Telegram Mini App",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

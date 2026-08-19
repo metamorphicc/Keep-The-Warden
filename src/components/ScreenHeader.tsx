@@ -6,13 +6,13 @@ import { Ribbon } from './Ribbon'
 
 export interface ScreenHeaderProps {
   title: string
-  /** hide the coin/shard counters (settings screen) */
+  /** hide the bankroll/credit counters (settings screen) */
   showCurrency?: boolean
 }
 
-/** Back arrow + title ribbon + purse. Shared by every sub-screen. */
+/** Back arrow + title ribbon + counters. Shared by every sub-screen. */
 export function ScreenHeader({ title, showCurrency = true }: ScreenHeaderProps) {
-  const { coins, shards } = useGame((s) => ({ coins: s.coins, shards: s.shards }))
+  const { bankroll, credits } = useGame((s) => ({ bankroll: s.bankroll, credits: s.credits }))
 
   return (
     <header className="shead">
@@ -20,7 +20,7 @@ export function ScreenHeader({ title, showCurrency = true }: ScreenHeaderProps) 
         type="button"
         className="shead__back"
         onClick={() => setScreen('room')}
-        aria-label="Back to the hall"
+        aria-label="Back to the pit"
       >
         <PixelIcon name="arrowLeft" size={16} />
       </button>
@@ -28,7 +28,7 @@ export function ScreenHeader({ title, showCurrency = true }: ScreenHeaderProps) 
       <Ribbon size="sm">{title}</Ribbon>
 
       {showCurrency ? (
-        <CurrencyBar coins={coins} shards={shards} compact />
+        <CurrencyBar bankroll={bankroll} credits={credits} compact />
       ) : (
         <span className="shead__spacer" />
       )}

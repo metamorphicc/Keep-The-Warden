@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
-import { NEEDS, NEED_ORDER } from './config'
+import { STATS, STAT_ORDER } from './config'
 import { loadSave, scheduleSave } from './persistence'
-import type { GameState, Needs, SaveData } from './types'
+import type { GameState, SaveData, Stats } from './types'
 import { clamp } from './util'
 
 /* ==========================================================================
@@ -21,7 +21,9 @@ function createInitialState(): GameState {
     awayMs,
     line: '',
     lineId: 0,
-    petWindow: { since: now, gained: 0 },
+    focusMarket: null,
+    lastTrade: null,
+    tapWindow: { since: now, gained: 0 },
   }
 }
 
@@ -41,16 +43,20 @@ function saveSlice(): SaveData {
   return {
     version: state.version,
     name: state.name,
-    needs: state.needs,
-    coins: state.coins,
-    shards: state.shards,
-    larder: state.larder,
+    stats: state.stats,
+    bankroll: state.bankroll,
+    peakBankroll: state.peakBankroll,
+    credits: state.credits,
+    stash: state.stash,
     owned: state.owned,
     look: state.look,
+    markets: state.markets,
+    marketsAt: state.marketsAt,
+    hedgeUntil: state.hedgeUntil,
     lastVisit: state.lastVisit,
     firstVisit: state.firstVisit,
     visits: state.visits,
-    stats: state.stats,
+    tally: state.tally,
     settings: state.settings,
   }
 }
@@ -60,11 +66,14 @@ export function setState(
 ): void {
   const next = typeof patch === 'function' ? patch(state) : patch
   state = { ...state, ...next }
+  // The high-water mark is bookkeeping, not gameplay: keep it correct here
+  // rather than in every caller that can move money.
+  if (state.bankroll > state.peakBankroll) state.peakBankroll = state.bankroll
   for (const l of listeners) l()
   scheduleSave(saveSlice)
 }
 
-/** Replaces the whole state (used by "reset save"). */
+/** Replaces the whole state (used by "wipe the account"). */
 export function resetState(): void {
   state = { ...createInitialState(), screen: 'room' }
   for (const l of listeners) l()
@@ -103,23 +112,38 @@ export function useGame<T>(selector: (s: GameState) => T): T {
 }
 
 /* ==========================================================================
-   Need helpers
+   Stat helpers
    ========================================================================== */
 
-export function addNeeds(delta: Partial<Needs>): Needs {
-  const needs = { ...state.needs }
-  for (const key of NEED_ORDER) {
+export function addStats(delta: Partial<Stats>): Stats {
+  const stats = { ...state.stats }
+  for (const key of STAT_ORDER) {
     const d = delta[key]
-    if (typeof d === 'number') needs[key] = clamp(needs[key] + d)
+    if (typeof d === 'number') stats[key] = clamp(stats[key] + d)
   }
-  return needs
+  return stats
 }
 
-/** Average of all needs — drives the warden's overall demeanour. */
-export function overallMood(needs: Needs): number {
+/**
+ * One number for "how is he doing". Heat is inverted — a cold book is a healthy
+ * book — so it is folded in as its complement.
+ */
+export function overallForm(stats: Stats): number {
   let sum = 0
-  for (const key of NEED_ORDER) sum += needs[key]
-  return sum / NEED_ORDER.length
+  for (const key of STAT_ORDER) {
+    sum += STATS[key].inverted ? 100 - stats[key] : stats[key]
+  }
+  return sum / STAT_ORDER.length
+}
+
+/**
+ * Bankroll as a 0..100 gauge, so the HUD can keep five bars without pretending
+ * money is a percentage. 100 means "at the high-water mark"; it falls with the
+ * drawdown off that peak.
+ */
+export function bankrollHealth(bankroll: number, peak: number): number {
+  if (peak <= 0) return 0
+  return clamp((bankroll / peak) * 100)
 }
 
 /* ==========================================================================
@@ -129,28 +153,28 @@ export function overallMood(needs: Needs): number {
 let lastTick = Date.now()
 
 /**
- * Applies real-time decay. Safe to call at any cadence — decay is derived from
+ * Applies real-time drift. Safe to call at any cadence — drift is derived from
  * wall-clock delta, so a backgrounded WebView catches up on the next tick.
- * Decay is paused while he is asleep (that is the point of sleeping).
+ * Drift pauses while he is recovering (that is the point of recovering).
  */
 export function tick(now = Date.now()): void {
   const dt = now - lastTick
   lastTick = now
   if (dt <= 0) return
 
-  const asleep =
-    state.activity.kind === 'sleep' &&
+  const resting =
+    state.activity.kind === 'recover' &&
     now < state.activity.startedAt + state.activity.duration
 
   const hours = dt / 3_600_000
-  const needs = { ...state.needs }
+  const stats = { ...state.stats }
   let changed = false
 
-  if (!asleep) {
-    for (const key of NEED_ORDER) {
-      const next = clamp(needs[key] - NEEDS[key].decayPerHour * hours)
-      if (next !== needs[key]) {
-        needs[key] = next
+  if (!resting) {
+    for (const key of STAT_ORDER) {
+      const next = clamp(stats[key] - STATS[key].driftPerHour * hours)
+      if (next !== stats[key]) {
+        stats[key] = next
         changed = true
       }
     }
@@ -161,21 +185,21 @@ export function tick(now = Date.now()): void {
     state.activity.kind !== 'idle' &&
     now >= state.activity.startedAt + state.activity.duration
 
-  // reset the anti-spam petting window
-  const petWindowDone = now - state.petWindow.since > 60_000
+  // reset the anti-spam PnL-checking window
+  const tapWindowDone = now - state.tapWindow.since > 60_000
 
-  if (!changed && !activityDone && !petWindowDone) {
+  if (!changed && !activityDone && !tapWindowDone) {
     // still publish once a second so cooldown timers in the UI count down
     for (const l of listeners) l()
     return
   }
 
   setState({
-    needs: changed ? needs : state.needs,
+    stats: changed ? stats : state.stats,
     activity: activityDone
       ? { kind: 'idle', startedAt: now, duration: 0 }
       : state.activity,
-    petWindow: petWindowDone ? { since: now, gained: 0 } : state.petWindow,
+    tapWindow: tapWindowDone ? { since: now, gained: 0 } : state.tapWindow,
   })
 }
 

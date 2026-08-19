@@ -83,7 +83,7 @@ export function ItemSlot({
 
       {price && (
         <span className="slot__price">
-          <PixelIcon name={price.currency === 'coins' ? 'coin' : 'shard'} size={10} />
+          <PixelIcon name={price.currency === 'bankroll' ? 'coin' : 'shard'} size={10} />
           {price.amount}
         </span>
       )}

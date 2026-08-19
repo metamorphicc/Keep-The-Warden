@@ -39,21 +39,22 @@ declare const process: { env: Record<string, string | undefined> }
    -------------------------------------------------------------------------- */
 
 const CAPTION = [
-  '<b>KEEP THE WARDEN</b>',
+  '<b>QUANTUM PIT</b>',
+  '<i>Polymarket trader simulator</i>',
   '',
-  'He held the lower gate of Emberhold for forty winters. Nothing comes through it any more, and nobody sent word that he could leave.',
+  'Old Halvard held a gate for forty winters. Now he holds positions. Same wooden room, same bad lighting, different kind of door.',
   '',
-  'So he sweeps. He eats stew. He hits a straw dummy to stay honest.',
+  'Six invented questions on a board. Read them, size them, watch the machine decide.',
   '',
-  'Your job is smaller than his: keep him fed, rested, clean and in reasonable spirits. Tap him when he sulks. He will pretend not to need it.',
+  'Your job is smaller than his: keep his Edge sharp, his Focus alive, his Heat down and his Rep alive. Tap him to check the PnL. He will pretend not to need the audience.',
   '',
-  '<i>No combat. No wallet. No chain. Just an old man and five bars that keep falling.</i>',
+  '<i>Paper trading only. No real money, no real orders, no wallet, no chain — the bankroll is a number in a save file.</i>',
 ].join('\n')
 
 const NUDGE =
-  'The hall is through the button below. He does not read messages — he is busy standing near a door.'
+  'The pit is through the button below. He does not read messages — he is busy staring at a quote.'
 
-const BUTTON_TEXT = '→  Enter the Deep Hall  ←'
+const BUTTON_TEXT = '→  Take the Desk  ←'
 
 /* -------------------------------------------------------------------------- */
 
@@ -145,7 +146,7 @@ export default async function handler(req: Req, res: Res): Promise<void> {
   if (req.method !== 'POST') {
     res.status(200).json({
       ok: true,
-      what: 'Keep The Warden bot webhook',
+      what: 'Quantum Pit bot webhook',
       configured: Boolean(process.env.BOT_TOKEN),
       app: appUrl() || null,
     })

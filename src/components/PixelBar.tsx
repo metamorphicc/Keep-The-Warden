@@ -11,6 +11,8 @@ export interface PixelBarProps {
   low?: boolean
   /** show the numeric value on the right */
   showValue?: boolean
+  /** replaces the numeric value with arbitrary text (money, "12/20", …) */
+  valueText?: string
   size?: 'sm' | 'md'
   className?: string
 }
@@ -29,6 +31,7 @@ export function PixelBar({
   colorDark,
   low = false,
   showValue = true,
+  valueText,
   size = 'md',
   className,
 }: PixelBarProps) {
@@ -50,7 +53,7 @@ export function PixelBar({
         />
         <div className="bar__notches" />
       </div>
-      {showValue && <span className="bar__value">{Math.round(value)}</span>}
+      {showValue && <span className="bar__value">{valueText ?? Math.round(value)}</span>}
     </div>
   )
 }

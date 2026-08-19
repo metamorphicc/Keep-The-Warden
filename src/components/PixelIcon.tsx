@@ -135,14 +135,15 @@ const ART = {
     '.kkkkkk.',
     '........',
   ],
-  dummy: [
-    '..yyy...',
-    '.yYYYy..',
-    '..yyy...',
-    'wwyYyww.',
-    '..yYy...',
-    '..yYy...',
-    '..www...',
+  /** a little cathode terminal on a stand — the ticket machine */
+  terminal: [
+    'kkkkkkk.',
+    'kmMMMmk.',
+    'kMmMmMk.',
+    'kmMMMmk.',
+    'kkkkkkk.',
+    '..kkk...',
+    '..kkk...',
     '.wwwww..',
   ],
   star: [

@@ -2,9 +2,12 @@ import { P } from '../styles/palette'
 import { dither, drawMatrix, lightPool, noise2, outline, px, pxa, pxLine, type Ctx } from './draw'
 
 /* ==========================================================================
-   The Deep Hall — a single low-resolution room, drawn procedurally.
+   The Quantum Pit — a single low-resolution trading hall, drawn procedurally.
    Static geometry is rendered once into an offscreen canvas and blitted every
-   frame; only fire, light flicker and props animate.
+   frame; only fire, light flicker, the terminal glow and props animate.
+
+   Same room the old warden kept. The pot is coffee now and there is a small
+   green screen on the shelf. Nothing else moved.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -37,7 +40,10 @@ export const SCENE = {
 /** Tappable props in the room, in scene coordinates. */
 export const HOTSPOTS = {
   hero: { x: 74, y: VOID_H + 118, w: 44, h: 66 },
-  cauldron: { x: 144, y: VOID_H + 142, w: 42, h: 38 },
+  /** the pot on the tripod — coffee now, and it has been on a long time */
+  urn: { x: 144, y: VOID_H + 142, w: 42, h: 38 },
+  /** the little green screen on the shelf */
+  terminal: { x: 126, y: VOID_H + 90, w: 30, h: 22 },
   bed: { x: 4, y: VOID_H + 152, w: 48, h: 28 },
   torchL: { x: 18, y: VOID_H + 68, w: 20, h: 30 },
   torchR: { x: 154, y: VOID_H + 68, w: 20, h: 30 },
@@ -49,7 +55,7 @@ export type HotspotName = keyof typeof HOTSPOTS
 
 export function hitTest(x: number, y: number): HotspotName | null {
   // hero first: he stands in front of everything
-  const order: HotspotName[] = ['hero', 'cauldron', 'bed', 'torchL', 'torchR', 'door']
+  const order: HotspotName[] = ['hero', 'urn', 'terminal', 'bed', 'torchL', 'torchR', 'door']
   for (const name of order) {
     const h = HOTSPOTS[name]
     if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) return name
@@ -331,18 +337,36 @@ function drawShelf(ctx: Ctx): void {
   px(ctx, x, y + 3, 26, 1, P.ink)
   px(ctx, x + 2, y + 3, 2, 3, P.woodDeep)
   px(ctx, x + 22, y + 3, 2, 3, P.woodDeep)
-  // jars
-  const jars: [number, string, string][] = [
-    [2, P.tealDeep, P.tealLit],
-    [10, P.emberDeep, P.emberLit],
-    [18, P.spiritDeep, P.spiritLit],
-  ]
-  for (const [ox, body, lid] of jars) {
-    px(ctx, x + ox, y - 9, 6, 9, body)
-    px(ctx, x + ox, y - 9, 6, 2, lid)
-    px(ctx, x + ox + 1, y - 6, 1, 5, lid)
-    outline(ctx, x + ox, y - 9, 6, 9, P.ink, 1)
-  }
+}
+
+/** Terminal position in room space — the animated glow reuses these. */
+const TERM = { x: 132, y: 93, w: 20, h: 15 } as const
+
+/**
+ * A chunky little cathode screen on the shelf. Decoration only: the numbers on
+ * it are three green rows and a candle stub, not a chart.
+ */
+function drawTerminalCase(ctx: Ctx): void {
+  const { x, y, w, h } = TERM
+  // casing
+  px(ctx, x, y, w, h, P.stoneDark)
+  px(ctx, x, y, w, 2, P.stoneLit)
+  px(ctx, x + 1, y + h - 2, w - 2, 2, P.stoneDeep)
+  outline(ctx, x, y, w, h, P.ink, 1)
+  // screen well
+  px(ctx, x + 2, y + 2, w - 4, 9, '#081109')
+  outline(ctx, x + 2, y + 2, w - 4, 9, P.ink, 1)
+  // dead phosphor — the lit rows are painted per frame
+  px(ctx, x + 4, y + 4, 6, 1, P.green)
+  px(ctx, x + 4, y + 6, 9, 1, P.green)
+  px(ctx, x + 4, y + 8, 4, 1, P.green)
+  // vents and a single fat knob
+  px(ctx, x + 4, y + 12, 8, 1, P.stoneDeep)
+  px(ctx, x + 15, y + 12, 2, 2, P.goldDark)
+  // stub candle wedged beside it, because the screen light is not enough
+  px(ctx, x - 4, y + 9, 3, 6, P.boneDim)
+  px(ctx, x - 4, y + 9, 3, 1, P.bone)
+  px(ctx, x - 5, y + 14, 5, 1, P.woodDark)
 }
 
 function drawFloor(ctx: Ctx): void {
@@ -395,7 +419,11 @@ function drawStrawBed(ctx: Ctx): void {
   outline(ctx, x + 3, y - 4, 16, 7, P.ink, 1)
 }
 
-function drawCauldronBody(ctx: Ctx): void {
+/**
+ * The pot on the tripod. It used to hold stew. It holds coffee now and it has
+ * been on the fire since a drawdown he does not discuss.
+ */
+function drawUrnBody(ctx: Ctx): void {
   const x = 148
   const y = 150
   // tripod
@@ -411,7 +439,7 @@ function drawCauldronBody(ctx: Ctx): void {
   px(ctx, x - 2, y, 36, 5, P.plateDark)
   px(ctx, x - 2, y, 36, 2, P.plateLit)
   px(ctx, x - 2, y + 4, 36, 1, P.ink)
-  // stew surface
+  // surface — thick, and a long way past drinkable
   px(ctx, x + 3, y + 2, 26, 2, P.emberDeep)
   px(ctx, x + 8, y + 2, 8, 1, P.ember)
   // highlight
@@ -461,7 +489,8 @@ function drawGrime(ctx: Ctx, level: number): void {
     pxa(ctx, x + 1, y - 1, w - 2, 1, '#3d3419', a * 0.45)
   }
 
-  // spilled slop by the hearth and crumbs by the mat, the two places he eats
+  // spilled coffee by the fire and torn paper by the mat, the two places he
+  // stops moving
   pxa(ctx, 140, R.floorY + 16, 14, 3, '#3a2f14', a * 0.8)
   pxa(ctx, 143, R.floorY + 14, 8, 2, '#463a1a', a * 0.6)
   for (let i = 0; i < 5 * level; i++) {
@@ -596,10 +625,11 @@ function buildStatic(grime: number): HTMLCanvasElement {
   drawBanner(ctx, 168, 26, 52)
   drawWeaponRack(ctx)
   drawShelf(ctx)
+  drawTerminalCase(ctx)
   drawSkirting(ctx)
   drawFloor(ctx)
   drawStrawBed(ctx)
-  drawCauldronBody(ctx)
+  drawUrnBody(ctx)
   drawTorchBracket(ctx, 26, 82)
   drawTorchBracket(ctx, 166, 82)
   drawGrime(ctx, grime)
@@ -630,8 +660,8 @@ export interface RoomOpts {
   grime: number
   /** 0..1 extra darkness (used while he sleeps) */
   dim: number
-  /** 0..1 how strongly the spirit energy is glowing */
-  spirit: number
+  /** 0..1 how strongly the terminal and the door-crack are glowing */
+  edge: number
   /** horizontal offset of the character, so his shadow walks with him */
   heroShift?: number
   /** 0..1 shadow strength — folded up on the mat he barely casts one */
@@ -669,7 +699,7 @@ export function drawRoom(ctx: Ctx, o: RoomOpts): void {
     lightPool(ctx, x, R.floorY + 16, 30, P.emberLit, 0.1 * lightStrength)
   }
 
-  // cauldron fire under the pot
+  // fire under the urn
   const fx = 156
   const fy = 176
   for (let i = 0; i < 4; i++) {
@@ -679,15 +709,30 @@ export function drawRoom(ctx: Ctx, o: RoomOpts): void {
   pxa(ctx, fx - 2, fy, 26, 2, P.emberDeep, 0.9)
   lightPool(ctx, 164, 172, 26, P.emberLit, 0.14 * lightStrength)
 
-  // steam off the stew
+  // steam off the coffee
   for (let i = 0; i < 3; i++) {
     const ph = (o.t / 26 + i * 22) % 44
     pxa(ctx, 156 + i * 7 + Math.round(Math.sin((o.t / 240) + i) * 2), 150 - ph, 2, 2, P.boneDim, Math.max(0, 0.4 - ph / 110))
   }
 
-  // spirit light bleeding under the door
-  if (o.spirit > 0.05) {
-    lightPool(ctx, 96, 140, 26 + o.spirit * 10, P.spirit, 0.1 * o.spirit)
+  // the terminal: three phosphor rows that redraw themselves, and the candle
+  // stub beside it. Purely decorative — brighter when he actually has a read.
+  const feed = 0.35 + o.edge * 0.65
+  const scan = Math.floor(o.t / 150) % 3
+  for (let r = 0; r < 3; r++) {
+    const rowW = [6, 9, 4][r] + ((Math.floor(o.t / 420) + r) % 3)
+    const lit = r === scan ? 1 : 0.5
+    pxa(ctx, TERM.x + 4, TERM.y + 4 + r * 2, rowW, 1, P.greenLit, feed * lit)
+  }
+  pxa(ctx, TERM.x + 3, TERM.y + 3, TERM.w - 6, 7, P.green, 0.1 * feed)
+  lightPool(ctx, TERM.x + 10, TERM.y + 7, 16, P.greenLit, 0.09 * feed * lightStrength)
+  const ch = 2 + (Math.floor(o.t / 170) % 2)
+  pxa(ctx, TERM.x - 3, TERM.y + 8 - ch, 1, ch, P.emberPale, 0.85 * lightStrength)
+  lightPool(ctx, TERM.x - 3, TERM.y + 8, 12, P.ember, 0.1 * lightStrength)
+
+  // cold light bleeding under the door — the way out, still there
+  if (o.edge > 0.05) {
+    lightPool(ctx, 96, 140, 26 + o.edge * 10, P.spirit, 0.1 * o.edge)
   }
 
   ctx.restore()

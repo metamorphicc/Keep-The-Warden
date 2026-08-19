@@ -1,15 +1,17 @@
 import {
   CLOUD_SAVE_KEY,
+  MARKET_BY_ID,
   MAX_OFFLINE_HOURS,
-  NEEDS,
-  NEED_ORDER,
+  OFFLINE_FLOOR,
   SAVE_KEY_LEGACY,
   SAVE_KEY_PREFIX,
   SAVE_VERSION,
+  STATS,
+  STAT_ORDER,
   freshSave,
   sanitizeName,
 } from './config'
-import type { Needs, SaveData } from './types'
+import type { MarketState, SaveData, Stats } from './types'
 import { clamp } from './util'
 import {
   cloudAvailable,
@@ -30,9 +32,11 @@ export interface LoadResult {
    Where the save lives
 
    localStorage is namespaced by Telegram account id, so a shared device gives
-   each player their own warden. Telegram's CloudStorage holds a copy of the
+   each player their own trader. Telegram's CloudStorage holds a copy of the
    same JSON against the player's account, which is what makes progress follow
    them to another phone — there is still no server of ours anywhere.
+
+   Nothing here is money. It is a JSON blob with a fake cash figure in it.
    ========================================================================== */
 
 function localKey(): string {
@@ -64,9 +68,9 @@ function parseSave(raw: string): Partial<SaveData> | null {
 let localSavedAt = 0
 
 /**
- * Reads the save, repairs anything missing/corrupt, then applies the decay the
- * warden suffered while the app was closed. Offline decay is capped so a long
- * absence is survivable.
+ * Reads the save, repairs anything missing/corrupt, then applies the drift that
+ * happened while the app was closed. Offline drift is capped so a long absence
+ * is survivable.
  */
 export function loadSave(now: number): LoadResult {
   const base = freshSave(now)
@@ -84,40 +88,51 @@ export function loadSave(now: number): LoadResult {
   localSavedAt = save.lastVisit
   const awayMs = Math.max(0, now - save.lastVisit)
 
-  save.needs = applyDecay(save.needs, awayMs)
+  save.stats = applyDrift(save.stats, awayMs)
   save.lastVisit = now
   save.visits += 1
 
   return { save, awayMs, fresh: false }
 }
 
-/** Merge an unknown-shaped payload onto a fresh save, field by field. */
+/**
+ * Merge an unknown-shaped payload onto a fresh save, field by field.
+ *
+ * This is also the v4 → v5 path. A pre-Quantum-Pit save has `needs`, `coins`,
+ * `shards` and `larder`, none of which mean anything now, so they are simply
+ * not read — the trader half comes out fresh. What does carry over is the part
+ * that is still his: the name, the rig he owns, what he is wearing, and how
+ * long you have been at this.
+ */
 function migrate(input: Partial<SaveData>, base: SaveData): SaveData {
-  const needs = { ...base.needs }
-  if (input.needs && typeof input.needs === 'object') {
-    for (const key of NEED_ORDER) {
-      const v = (input.needs as Partial<Needs>)[key]
-      if (typeof v === 'number' && Number.isFinite(v)) needs[key] = clamp(v)
+  const stats = { ...base.stats }
+  if (input.stats && typeof input.stats === 'object') {
+    for (const key of STAT_ORDER) {
+      const v = (input.stats as Partial<Stats>)[key]
+      if (typeof v === 'number' && Number.isFinite(v)) stats[key] = clamp(v)
     }
   }
 
-  const larder: Record<string, number> = {}
-  if (input.larder && typeof input.larder === 'object') {
-    for (const [k, v] of Object.entries(input.larder)) {
+  const stash: Record<string, number> = {}
+  if (input.stash && typeof input.stash === 'object') {
+    for (const [k, v] of Object.entries(input.stash)) {
       if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
-        larder[k] = Math.floor(v)
+        stash[k] = Math.floor(v)
       }
     }
   }
+
+  const bankroll = Math.max(0, num(input.bankroll, base.bankroll))
 
   return {
     version: SAVE_VERSION,
     // Saves written before v4 have no name at all.
     name: typeof input.name === 'string' ? sanitizeName(input.name) : base.name,
-    needs,
-    coins: num(input.coins, base.coins),
-    shards: num(input.shards, base.shards),
-    larder: Object.keys(larder).length ? larder : base.larder,
+    stats,
+    bankroll,
+    peakBankroll: Math.max(bankroll, num(input.peakBankroll, base.peakBankroll)),
+    credits: Math.max(0, num(input.credits, base.credits)),
+    stash: Object.keys(stash).length ? stash : base.stash,
     owned: Array.isArray(input.owned)
       ? Array.from(new Set([...base.owned, ...input.owned.filter((x) => typeof x === 'string')]))
       : base.owned,
@@ -126,12 +141,33 @@ function migrate(input: Partial<SaveData>, base: SaveData): SaveData {
       cloak: str(input.look?.cloak, base.look.cloak),
       blade: str(input.look?.blade, base.look.blade),
     },
+    markets: readMarkets(input.markets),
+    marketsAt: num(input.marketsAt, base.marketsAt),
+    hedgeUntil: num(input.hedgeUntil, base.hedgeUntil),
     lastVisit: num(input.lastVisit, base.lastVisit),
     firstVisit: num(input.firstVisit, base.firstVisit),
     visits: num(input.visits, base.visits),
-    stats: { ...base.stats, ...(input.stats ?? {}) },
+    tally: { ...base.tally, ...(input.tally ?? {}) },
     settings: { ...base.settings, ...(input.settings ?? {}) },
   }
+}
+
+/** Quotes are only kept for questions that still exist in this build. */
+function readMarkets(input: unknown): MarketState[] {
+  if (!Array.isArray(input)) return []
+  const out: MarketState[] = []
+  for (const row of input) {
+    if (!row || typeof row !== 'object') continue
+    const { id, prob, quotedAt } = row as Partial<MarketState>
+    if (typeof id !== 'string' || !MARKET_BY_ID[id]) continue
+    if (typeof prob !== 'number' || !Number.isFinite(prob)) continue
+    out.push({
+      id,
+      prob: Math.min(0.99, Math.max(0.01, prob)),
+      quotedAt: typeof quotedAt === 'number' && Number.isFinite(quotedAt) ? quotedAt : 0,
+    })
+  }
+  return out
 }
 
 function num(v: unknown, fallback: number): number {
@@ -142,13 +178,19 @@ function str(v: unknown, fallback: string | null): string | null {
   return typeof v === 'string' ? v : v === null ? null : fallback
 }
 
-/** Needs after `elapsedMs` of neglect. */
-export function applyDecay(needs: Needs, elapsedMs: number): Needs {
+/** Stats after `elapsedMs` of neglect. Heat cools; everything else erodes. */
+export function applyDrift(stats: Stats, elapsedMs: number): Stats {
   const hours = Math.min(elapsedMs / 3_600_000, MAX_OFFLINE_HOURS)
-  if (hours <= 0) return needs
-  const out = { ...needs }
-  for (const key of NEED_ORDER) {
-    out[key] = clamp(out[key] - NEEDS[key].decayPerHour * hours)
+  if (hours <= 0) return stats
+  const out = { ...stats }
+  for (const key of STAT_ORDER) {
+    const drifted = clamp(out[key] - STATS[key].driftPerHour * hours)
+    // Heat is allowed all the way to nothing. The eroding gauges stop at the
+    // floor, so a returning player always has enough left to act — and never
+    // gets a gauge handed back up if it was already below it.
+    out[key] = STATS[key].inverted
+      ? drifted
+      : Math.max(drifted, Math.min(out[key], OFFLINE_FLOOR))
   }
   return out
 }
@@ -180,16 +222,20 @@ export function writeSave(data: SaveData, immediateCloud = false): void {
   const payload: SaveData = {
     version: SAVE_VERSION,
     name: data.name,
-    needs: data.needs,
-    coins: data.coins,
-    shards: data.shards,
-    larder: data.larder,
+    stats: data.stats,
+    bankroll: data.bankroll,
+    peakBankroll: data.peakBankroll,
+    credits: data.credits,
+    stash: data.stash,
     owned: data.owned,
     look: data.look,
+    markets: data.markets,
+    marketsAt: data.marketsAt,
+    hedgeUntil: data.hedgeUntil,
     lastVisit: Date.now(),
     firstVisit: data.firstVisit,
     visits: data.visits,
-    stats: data.stats,
+    tally: data.tally,
     settings: data.settings,
   }
   const json = JSON.stringify(payload)
@@ -278,7 +324,7 @@ export async function pullCloudSave(now: number): Promise<LoadResult | null> {
   if (save.lastVisit <= localSavedAt + 1000) return null
 
   const awayMs = Math.max(0, now - save.lastVisit)
-  save.needs = applyDecay(save.needs, awayMs)
+  save.stats = applyDrift(save.stats, awayMs)
   save.lastVisit = now
   save.visits += 1
   localSavedAt = now

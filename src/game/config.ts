@@ -1,30 +1,35 @@
 import type {
-  CosmeticDef,
-  FoodDef,
-  NeedKey,
-  NeedMeta,
+  ActionResult,
+  MarketDef,
+  RigDef,
   SaveData,
+  StatKey,
+  StatMeta,
+  SupplyDef,
 } from './types'
 import { P } from '../styles/palette'
 import type { IconName } from '../components/PixelIcon'
 
 /* ==========================================================================
    World
+
+   A paper-trading sim. No real money, no real book, no wallet. The old warden
+   kept a door; now he keeps a position.
    ========================================================================== */
 
-export const GAME_VERSION = '1.0.0'
+export const GAME_VERSION = '2.0.0'
 
 /**
  * Save keys are namespaced per Telegram account, so two people sharing a
- * device (or the same browser) get their own warden. `SAVE_KEY_LEGACY` is the
+ * device (or the same browser) get their own trader. `SAVE_KEY_LEGACY` is the
  * flat key used before namespacing; it is adopted once, then left alone.
  */
 export const SAVE_KEY_PREFIX = 'ktw.save.v1:'
 export const SAVE_KEY_LEGACY = 'ktw.save.v1'
 export const CLOUD_SAVE_KEY = 'ktw_save_v1'
-export const SAVE_VERSION = 4
+export const SAVE_VERSION = 5
 
-/** Longest name the player may give the warden. */
+/** Longest name the player may give him. */
 export const NAME_MAX = 18
 
 /**
@@ -43,76 +48,94 @@ export function sanitizeName(input: string): string {
   return cleaned.length > 0 ? cleaned : WORLD.hero
 }
 
-/** Original world naming — no real-world or third-party references. */
+/** Original world naming. Prediction markets as a mood, not as a data feed. */
 export const WORLD = {
-  title: 'Keep The Warden',
-  hall: 'The Deep Hall',
-  keep: 'Emberhold',
-  hero: 'Warden Halvard',
-  coinName: 'Marks',
-  shardName: 'Shards',
+  title: 'Quantum Pit',
+  subtitle: 'Polymarket trader simulator',
+  /** the main room */
+  hall: 'The Pit',
+  /** the settings screen */
+  keep: 'The Back Office',
+  hero: 'Old Halvard',
+  cashName: 'Bankroll',
+  creditName: 'Credits',
+  /** printed anywhere the player might forget */
+  disclaimer: 'Simulated only. No real money, no real orders.',
 } as const
 
 /* ==========================================================================
-   Needs
+   Stats
    ========================================================================== */
 
-export const NEED_ORDER: NeedKey[] = ['hunger', 'energy', 'mood', 'clean', 'spirit']
+export const STAT_ORDER: StatKey[] = ['edge', 'focus', 'heat', 'rep']
 
-export const NEEDS: Record<NeedKey, NeedMeta> = {
-  hunger: {
-    key: 'hunger',
-    label: 'Hunger',
-    icon: 'stew',
-    color: P.ember,
-    colorDark: P.emberDeep,
-    decayPerHour: 7,
-    warn: 'The Warden is hungry. Stew or regret.',
+export const STATS: Record<StatKey, StatMeta> = {
+  edge: {
+    key: 'edge',
+    label: 'Edge',
+    icon: 'swordBlue',
+    color: P.spiritLit,
+    colorDark: P.spiritDeep,
+    driftPerHour: 4,
+    warn: 'No thesis. You are gambling, not trading.',
   },
-  energy: {
-    key: 'energy',
-    label: 'Energy',
+  focus: {
+    key: 'focus',
+    label: 'Focus',
     icon: 'bolt',
     color: P.gold,
     colorDark: P.goldDark,
-    decayPerHour: 5,
-    warn: 'His knees have filed a complaint. Let him sleep.',
+    driftPerHour: 6,
+    warn: 'He is reading the same line four times. Let him sit down.',
   },
-  mood: {
-    key: 'mood',
-    label: 'Mood',
-    icon: 'mask',
-    color: P.bloodLit,
-    colorDark: P.bloodDeep,
-    decayPerHour: 8,
-    warn: 'He is sulking at the door again. Do something.',
+  heat: {
+    key: 'heat',
+    label: 'Heat',
+    icon: 'flame',
+    color: P.ember,
+    colorDark: P.emberDeep,
+    /** heat bleeds off slowly on its own — the gauge cools, it does not decay */
+    driftPerHour: 5,
+    inverted: true,
+    warn: 'Heat is high. Hedge or blow the account.',
   },
-  clean: {
-    key: 'clean',
-    label: 'Clean',
-    icon: 'brush',
+  rep: {
+    key: 'rep',
+    label: 'Rep',
+    icon: 'star',
     color: P.tealLit,
     colorDark: P.tealDeep,
-    decayPerHour: 4.5,
-    warn: 'The armour smells like a battle nobody won.',
-  },
-  spirit: {
-    key: 'spirit',
-    label: 'Spirit',
-    icon: 'flame',
-    color: P.spiritLit,
-    colorDark: P.spiritDeep,
-    decayPerHour: 3.5,
-    warn: 'The blue light is thinning. That is never good.',
+    driftPerHour: 2,
+    warn: 'Nobody has quoted him in days. The desk forgets fast.',
   },
 }
 
-/** Below this a need is "critical" and the HUD bar starts blinking. */
-export const NEED_LOW = 30
-export const NEED_CRIT = 15
+/** Below this a normal gauge is "low" and its HUD bar starts blinking. */
+export const STAT_LOW = 30
+export const STAT_CRIT = 15
+/** Above these, Heat is the problem. */
+export const STAT_HIGH = 68
+export const STAT_HOT = 85
 
-/** Cap offline decay so a two-week absence is not an instant funeral. */
+/** The fifth HUD bar is derived: bankroll against its own high-water mark. */
+export const BANKROLL_BAR = {
+  label: 'Bankroll',
+  icon: 'coin' as IconName,
+  color: P.greenLit,
+  colorDark: P.green,
+}
+
+/** Cap offline drift so a two-week absence is not an instant funeral. */
 export const MAX_OFFLINE_HOURS = 36
+
+/**
+ * Offline drift never pushes an eroding gauge below this. Coming back after a
+ * week should find a cold, dull desk — not a locked one; the floor sits a little
+ * above the steepest action requirement (Sim Bet, focus 12) so the live clock
+ * cannot immediately erode a returning player out of his own game. Heat is
+ * exempt: cooling all the way down while away is the reward for leaving.
+ */
+export const OFFLINE_FLOOR = 18
 
 /* ==========================================================================
    Actions
@@ -123,344 +146,473 @@ export interface ActionDef {
   label: string
   icon: IconName
   /** navigates to a screen instead of resolving immediately */
-  opens?: 'feed' | 'train' | 'wardrobe' | 'shop' | 'settings'
-  /** need deltas on success */
-  gain?: Partial<Record<NeedKey, number>>
-  /** coins awarded */
-  coins?: number
-  /** shards awarded */
-  shards?: number
+  opens?: 'research' | 'scan' | 'bet' | 'rig' | 'shop' | 'settings'
+  /** stat deltas on success */
+  gain?: Partial<Record<StatKey, number>>
+  /** simulated cash awarded (or charged, if negative) */
+  cash?: number
+  /** credits awarded */
+  credits?: number
   /** ms before the button can be used again */
   cooldown?: number
   /** ms the character animation runs for */
   duration?: number
-  /** refuses if this need is below the threshold */
-  requires?: { need: NeedKey; min: number; refuse: string }
+  /** refuses unless the stat sits inside the window */
+  requires?: { stat: StatKey; min?: number; max?: number; refuse: string }
 }
 
 export const ACTIONS: Record<string, ActionDef> = {
-  feed: {
-    id: 'feed',
-    label: 'Feed',
+  research: {
+    id: 'research',
+    label: 'Research',
     icon: 'stew',
-    opens: 'feed',
+    opens: 'research',
   },
-  sleep: {
-    id: 'sleep',
-    label: 'Sleep',
+  recover: {
+    id: 'recover',
+    label: 'Recover',
     icon: 'bed',
-    gain: { energy: 34, hunger: -6, mood: 3 },
+    gain: { focus: 36, heat: -22, edge: -3 },
     cooldown: 40_000,
     duration: 2800,
   },
-  wash: {
-    id: 'wash',
-    label: 'Wash',
+  hedge: {
+    id: 'hedge',
+    label: 'Hedge',
     icon: 'brush',
-    gain: { clean: 42, energy: -5, mood: -2 },
-    coins: 0,
+    gain: { heat: -26, focus: -4, rep: -1 },
+    /** the hedge costs a little simulated cash to put on */
+    cash: -2,
     cooldown: 26_000,
     duration: 1900,
     requires: {
-      need: 'energy',
+      stat: 'focus',
       min: 8,
-      refuse: 'Too tired to scrub. Even the rust is winning.',
+      refuse: 'Too fried to work the other leg. The hedge stays theoretical.',
     },
   },
-  play: {
-    id: 'play',
-    label: 'Play',
+  scan: {
+    id: 'scan',
+    label: 'Scan',
     icon: 'dice',
-    gain: { mood: 26, energy: -9, hunger: -4, spirit: 4 },
-    coins: 3,
-    cooldown: 16_000,
-    duration: 1800,
+    opens: 'scan',
     requires: {
-      need: 'energy',
-      min: 12,
-      refuse: 'He looks at the dice. The dice look back. Nothing happens.',
+      stat: 'focus',
+      min: 6,
+      refuse: 'The board is a smear of numbers. Nothing is being read today.',
     },
   },
-  train: {
-    id: 'train',
-    label: 'Train',
-    icon: 'dummy',
-    opens: 'train',
+  bet: {
+    id: 'bet',
+    label: 'Sim Bet',
+    icon: 'terminal',
+    opens: 'bet',
     requires: {
-      need: 'energy',
-      min: 15,
-      refuse: 'The dummy can wait. His spine cannot.',
+      stat: 'focus',
+      min: 12,
+      refuse: 'Sizing anything now would be a donation. His words.',
     },
   },
 }
 
-/** Order of the big action buttons in the main room. */
-export const ACTION_BAR: string[] = ['feed', 'wash', 'sleep', 'play', 'train']
+/** Order of the big action buttons in the pit. */
+export const ACTION_BAR: string[] = ['research', 'hedge', 'recover', 'scan', 'bet']
+
+/**
+ * The free read, offered on the research screen when the stash is empty. Slow
+ * and small on purpose — a broke desk still has a way back to an edge, it just
+ * has to sit there and earn it.
+ */
+export const DESK_READ = {
+  gain: { edge: 11, focus: -8 } as Partial<Record<StatKey, number>>,
+  cooldown: 45_000,
+  duration: 1700,
+}
+
+/** Past this, more reading does nothing and he says so. */
+export const EDGE_SOFT_CAP = 92
 
 /* ==========================================================================
-   Petting (tap the character)
+   Tapping him = Check PnL
    ========================================================================== */
 
-export const PET = {
-  /** mood per tap */
-  moodPerTap: 1.6,
-  spiritPerTap: 0.5,
-  /** soft cap: max mood gain per window */
+export const TAP = {
+  repPerTap: 0.9,
+  focusPerTap: 0.3,
+  /** soft cap: max rep gain per window */
   windowMs: 60_000,
-  windowCap: 14,
-  /** chance a tap shakes a coin loose */
-  coinChance: 0.07,
+  windowCap: 9,
+  /** chance a check shakes a credit loose (a rebate, a referral, who knows) */
+  creditChance: 0.06,
   duration: 620,
 }
 
 /* ==========================================================================
-   Larder — original food names
+   The board — mock questions only. Nothing is fetched, ever.
    ========================================================================== */
 
-export const FOODS: FoodDef[] = [
+export const MARKETS: MarketDef[] = [
   {
-    id: 'stew',
-    name: 'Ashroot Stew',
-    icon: 'stew',
-    price: 6,
-    currency: 'coins',
-    gain: { hunger: 34, mood: 6, energy: 4 },
-    desc: 'Thick, grey, and honest. Nobody asks what the roots were.',
+    id: 'btc120',
+    question: 'Will BTC close above 120k this month?',
+    tag: 'BTC',
+    icon: 'coin',
+    base: 0.42,
+    drift: 0.14,
+    focusCost: 4,
+    heatCost: 3,
+    blurb: 'Round number, round crowd. The book leans long and knows it.',
   },
   {
-    id: 'hardtack',
-    name: 'Hardtack Loaf',
-    icon: 'bread',
-    price: 3,
-    currency: 'coins',
-    gain: { hunger: 18 },
-    desc: 'Older than the door it was baked behind. Still counts as food.',
+    id: 'ethbtc',
+    question: 'Will ETH outperform BTC this week?',
+    tag: 'ETH',
+    icon: 'shard',
+    base: 0.47,
+    drift: 0.1,
+    focusCost: 3,
+    heatCost: 2,
+    blurb: 'A coin flip with a newsletter attached.',
   },
   {
-    id: 'trout',
-    name: 'Bog Trout',
-    icon: 'fish',
-    price: 9,
-    currency: 'coins',
-    gain: { hunger: 30, spirit: 6, clean: -4 },
-    desc: 'Caught in water that glows. He insists that is a good sign.',
+    id: 'fedhike',
+    question: 'Fed hike before October?',
+    tag: 'MACRO',
+    icon: 'gear',
+    base: 0.23,
+    drift: 0.09,
+    focusCost: 5,
+    heatCost: 4,
+    blurb: 'Everyone has read the same dot plot and drawn a different line.',
   },
   {
-    id: 'cavecap',
-    name: 'Cavecap Caps',
-    icon: 'mushroom',
-    price: 5,
-    currency: 'coins',
-    gain: { hunger: 16, spirit: 10, mood: -3 },
-    desc: 'Two are supper. Three are a conversation with the wall.',
+    id: 'soletf',
+    question: 'Solana ETF approved this year?',
+    tag: 'ETF',
+    icon: 'star',
+    base: 0.31,
+    drift: 0.13,
+    focusCost: 5,
+    heatCost: 4,
+    blurb: 'Priced on hope and one anonymous filing screenshot.',
   },
   {
-    id: 'boarleg',
-    name: 'Salted Boar Leg',
-    icon: 'meat',
-    price: 14,
-    currency: 'coins',
-    gain: { hunger: 52, mood: 10, energy: 8, clean: -6 },
-    desc: 'A feast. He will be insufferable about it for hours.',
+    id: 'gasunder',
+    question: 'Gas under 5 gwei for a full day?',
+    tag: 'CHAIN',
+    icon: 'bolt',
+    base: 0.56,
+    drift: 0.16,
+    focusCost: 3,
+    heatCost: 2,
+    blurb: 'Quiet chains are cheap chains. Chains are rarely quiet.',
   },
   {
-    id: 'ale',
-    name: 'Hollow Ale',
-    icon: 'ale',
-    price: 7,
-    currency: 'coins',
-    gain: { mood: 24, hunger: 8, energy: -6 },
-    desc: 'Warm, flat, beloved. Do not serve it before a watch.',
-  },
-  {
-    id: 'honey',
-    name: 'Emberdrop Honey',
-    icon: 'honey',
-    price: 11,
-    currency: 'coins',
-    gain: { hunger: 20, energy: 22, mood: 8 },
-    desc: 'The bees were angry and slightly on fire. Worth it.',
-  },
-  {
-    id: 'broth',
-    name: 'Spirit Broth',
-    icon: 'potion',
-    price: 2,
-    currency: 'shards',
-    gain: { spirit: 40, hunger: 12, mood: 4 },
-    desc: 'Tastes like a cold hallway. Fills the blue back up.',
+    id: 'rugweek',
+    question: 'Another top-50 token down 40% this week?',
+    tag: 'RISK',
+    icon: 'skull',
+    base: 0.61,
+    drift: 0.12,
+    focusCost: 4,
+    heatCost: 5,
+    blurb: 'The house always has a favourite in this one.',
   },
 ]
 
-export const FOOD_BY_ID: Record<string, FoodDef> = Object.fromEntries(
-  FOODS.map((f) => [f.id, f]),
+export const MARKET_BY_ID: Record<string, MarketDef> = Object.fromEntries(
+  MARKETS.map((m) => [m.id, m]),
+)
+
+export const MARKET = {
+  /** a scan re-quotes the whole board */
+  focusCost: 7,
+  heatCost: 2,
+  cooldown: 9_000,
+  /** after this, quotes are stale and fills get worse */
+  quoteTtlMs: 10 * 60_000,
+  /** extra slippage taken when filling against a stale quote */
+  staleSlip: 0.04,
+  /** quotes never sit at the extremes — nothing is ever certain here */
+  minProb: 0.06,
+  maxProb: 0.94,
+}
+
+/* ==========================================================================
+   Simulated fills
+
+   Polymarket-style: the quote IS the price of one YES share, so a stake of
+   $25 at 40c buys 62.5 shares that pay $1 each if it resolves your way.
+   ========================================================================== */
+
+export const BET = {
+  sizes: [10, 25, 50],
+  /** taken off the stake on every fill */
+  fee: 0.02,
+  /** how far full Edge tilts the real coin toward your side, in probability */
+  edgeSwing: 0.08,
+  /** above this Heat, fills start slipping against you */
+  heatSlipAt: 60,
+  /** worst-case slippage at Heat 100 */
+  slipMax: 0.06,
+  /** how long the "resolving" beat lasts */
+  resolveDelayMs: 1700,
+  win: { rep: 5, heat: 7, focus: -4, edge: -2 },
+  loss: { rep: -3, heat: 12, focus: -10, edge: -2 },
+  /** the hedge dampens the next fill in both directions */
+  hedgeWindowMs: 100_000,
+  hedgeWinMult: 0.7,
+  hedgeLossMult: 0.55,
+  /** the desk floats him again rather than ending the game */
+  bailout: { floor: 10, grant: 25, rep: -8 },
+}
+
+/* ==========================================================================
+   Notes and signals — the "research" stash. Consumed one at a time.
+   ========================================================================== */
+
+export const SUPPLIES: SupplyDef[] = [
+  {
+    id: 'orderflow',
+    name: 'Order Flow Notes',
+    icon: 'stew',
+    price: 14,
+    currency: 'bankroll',
+    gain: { edge: 30, focus: -6 },
+    desc: 'Someone else did the reading. Their handwriting is terrible.',
+  },
+  {
+    id: 'primer',
+    name: 'Base Rate Primer',
+    icon: 'bread',
+    price: 7,
+    currency: 'bankroll',
+    gain: { edge: 16 },
+    desc: 'Dull, correct, and quietly worth more than any thread.',
+  },
+  {
+    id: 'depthmap',
+    name: 'Depth Map',
+    icon: 'fish',
+    price: 20,
+    currency: 'bankroll',
+    gain: { edge: 26, heat: -6, focus: -4 },
+    desc: 'Where the size is hiding. Mostly it is hiding from you.',
+  },
+  {
+    id: 'thread',
+    name: 'Anon Thread',
+    icon: 'mushroom',
+    price: 4,
+    currency: 'bankroll',
+    gain: { edge: 12, heat: 9, focus: -3 },
+    desc: 'Two lines are genuine alpha. Forty are not. Good luck.',
+  },
+  {
+    id: 'dossier',
+    name: 'Resolution Dossier',
+    icon: 'meat',
+    price: 34,
+    currency: 'bankroll',
+    gain: { edge: 44, focus: -10 },
+    desc: 'The actual rules of the actual question. Almost nobody reads them.',
+  },
+  {
+    id: 'coffee',
+    name: 'Burnt Coffee',
+    icon: 'ale',
+    price: 6,
+    currency: 'bankroll',
+    gain: { focus: 24, heat: 6 },
+    desc: 'Warm, flat, beloved. Do not drink it before sizing up.',
+  },
+  {
+    id: 'coldbrew',
+    name: 'Cold Brew Flask',
+    icon: 'honey',
+    price: 16,
+    currency: 'bankroll',
+    gain: { focus: 40, edge: 4, heat: 8 },
+    desc: 'Three days of clarity, borrowed at a punitive rate.',
+  },
+  {
+    id: 'clarity',
+    name: 'Clarity Draught',
+    icon: 'potion',
+    price: 2,
+    currency: 'credits',
+    gain: { focus: 46, heat: -30 },
+    effect: 'clearCooldowns',
+    desc: 'Tastes like a cold hallway. Everything is usable again.',
+  },
+]
+
+export const SUPPLY_BY_ID: Record<string, SupplyDef> = Object.fromEntries(
+  SUPPLIES.map((s) => [s.id, s]),
 )
 
 /* ==========================================================================
-   Regalia — cosmetics, original names
+   The rig — cosmetics. Same three slots the sprite has always had.
    ========================================================================== */
 
-export const COSMETICS: CosmeticDef[] = [
-  // ---- head ----
+export const RIGS: RigDef[] = [
+  // ---- headset ----
   {
     id: 'head_none',
     name: 'Bare Head',
     slot: 'head',
     icon: 'mask',
     price: 0,
-    currency: 'coins',
-    desc: 'Just the beard and the scars. Classic.',
+    currency: 'bankroll',
+    desc: 'Just the beard and the eye bags. Classic.',
     starter: true,
   },
   {
     id: 'head_circlet',
-    name: 'Ironbrow Circlet',
+    name: 'Quant Visor',
     slot: 'head',
     icon: 'helm',
     price: 40,
-    currency: 'coins',
-    desc: 'Keeps the hair down and the doubts out.',
+    currency: 'bankroll',
+    desc: 'Keeps the glare down and the doubts out.',
   },
   {
     id: 'head_antler',
-    name: 'Antler Helm',
+    name: 'Antenna Rig',
     slot: 'head',
     icon: 'antler',
     price: 85,
-    currency: 'coins',
-    desc: 'The stag lost. The hat won.',
+    currency: 'bankroll',
+    desc: 'Picks up nothing. He swears it front-runs the news.',
   },
   {
     id: 'head_crown',
-    name: 'Hollow Crown',
+    name: 'Whale Crown',
     slot: 'head',
     icon: 'crown',
     price: 6,
-    currency: 'shards',
-    desc: 'Belonged to a king. He does not say which one.',
+    currency: 'credits',
+    desc: 'Worn by someone who exited at the top. Once.',
   },
-  // ---- cloak ----
+  // ---- coat ----
   {
     id: 'cloak_rag',
-    name: 'Tattered Mantle',
+    name: 'Frayed Housecoat',
     slot: 'cloak',
     icon: 'cloak',
     price: 0,
-    currency: 'coins',
-    desc: 'Forty winters of holes, arranged with dignity.',
+    currency: 'bankroll',
+    desc: 'Forty months of holes, arranged with dignity.',
     starter: true,
   },
   {
     id: 'cloak_watch',
-    name: 'Deepwatch Cloak',
+    name: 'Nightdesk Coat',
     slot: 'cloak',
     icon: 'cloak',
     price: 55,
-    currency: 'coins',
+    currency: 'bankroll',
     desc: 'Teal wool, thick as guilt. Standard issue, long discontinued.',
   },
   {
     id: 'cloak_pelt',
-    name: 'Ashen Pelt',
+    name: 'Drawdown Pelt',
     slot: 'cloak',
     icon: 'pelt',
     price: 95,
-    currency: 'coins',
-    desc: 'Whatever wore it first was bigger than him.',
+    currency: 'bankroll',
+    desc: 'Whatever wore it first also got liquidated.',
   },
   {
     id: 'cloak_ember',
-    name: 'Emberweave Drape',
+    name: 'Liquidation Drape',
     slot: 'cloak',
     icon: 'cloak',
     price: 5,
-    currency: 'shards',
+    currency: 'credits',
     desc: 'Smoulders faintly. He calls that a feature.',
   },
-  // ---- blade ----
+  // ---- probes ----
   {
     id: 'blade_steel',
-    name: 'Old Steel',
+    name: 'Plain Styluses',
     slot: 'blade',
     icon: 'sword',
     price: 0,
-    currency: 'coins',
-    desc: 'Two plain swords. They have never asked for anything.',
+    currency: 'bankroll',
+    desc: 'Two blunt sticks. They have never lied to him.',
     starter: true,
   },
   {
     id: 'blade_spirit',
-    name: 'Spirit-Bound Edge',
+    name: 'Signal Probes',
     slot: 'blade',
     icon: 'swordBlue',
     price: 70,
-    currency: 'coins',
-    desc: 'Hums in the dark. Louder when he lies.',
+    currency: 'bankroll',
+    desc: 'Hum in the dark. Louder when the thesis is thin.',
   },
   {
     id: 'blade_ember',
-    name: 'Emberfang Pair',
+    name: 'Hot-Hand Probes',
     slot: 'blade',
     icon: 'swordRed',
     price: 4,
-    currency: 'shards',
-    desc: 'Warm to hold. Warmer to be hit by.',
+    currency: 'credits',
+    desc: 'Warm to hold. Warmer after the third martingale.',
   },
 ]
 
-export const COSMETIC_BY_ID: Record<string, CosmeticDef> = Object.fromEntries(
-  COSMETICS.map((c) => [c.id, c]),
-)
+export const RIG_BY_ID: Record<string, RigDef> = Object.fromEntries(RIGS.map((r) => [r.id, r]))
 
 export const SLOT_LABEL: Record<'head' | 'cloak' | 'blade', string> = {
-  head: 'Head',
-  cloak: 'Cloak',
-  blade: 'Blades',
-}
-
-/* ==========================================================================
-   Training mini-game
-   ========================================================================== */
-
-export const TRAIN = {
-  durationMs: 15_000,
-  energyCost: 14,
-  /** coins per hit, before combo */
-  coinsPerHit: 0.34,
-  /** hits needed per shard */
-  hitsPerShard: 18,
-  /** combo grows while taps land within this window */
-  comboWindowMs: 900,
-  maxCombo: 8,
-  gain: { mood: 14, spirit: 12, hunger: -8, clean: -10 },
+  head: 'Headset',
+  cloak: 'Coat',
+  blade: 'Probes',
 }
 
 /* ==========================================================================
    Fresh save
    ========================================================================== */
 
+export const START_BANKROLL = 300
+
 export function freshSave(now: number): SaveData {
   return {
     version: SAVE_VERSION,
     name: WORLD.hero,
-    needs: { hunger: 62, energy: 58, mood: 55, clean: 48, spirit: 70 },
-    coins: 26,
-    shards: 2,
-    larder: { stew: 2, hardtack: 3 },
-    owned: COSMETICS.filter((c) => c.starter).map((c) => c.id),
+    stats: { edge: 40, focus: 62, heat: 18, rep: 30 },
+    bankroll: START_BANKROLL,
+    peakBankroll: START_BANKROLL,
+    credits: 2,
+    stash: { primer: 2, coffee: 1 },
+    owned: RIGS.filter((r) => r.starter).map((r) => r.id),
     look: { head: 'head_none', cloak: 'cloak_rag', blade: 'blade_steel' },
+    markets: [],
+    marketsAt: 0,
+    hedgeUntil: 0,
     lastVisit: now,
     firstVisit: now,
     visits: 1,
-    stats: {
-      pets: 0,
-      meals: 0,
-      naps: 0,
-      washes: 0,
-      plays: 0,
-      trains: 0,
-      bestCombo: 0,
+    tally: {
+      taps: 0,
+      researches: 0,
+      recovers: 0,
+      hedges: 0,
+      scans: 0,
+      bets: 0,
+      wins: 0,
+      losses: 0,
+      streak: 0,
+      bestStreak: 0,
+      bestWin: 0,
+      worstLoss: 0,
     },
     settings: { sound: true, haptics: true, reduceMotion: false },
   }
+}
+
+/** Convenience for the refuse paths, so callers never build this by hand. */
+export function refusal(message: string): ActionResult {
+  return { ok: false, message }
 }

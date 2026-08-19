@@ -5,26 +5,27 @@ import { PixelPanel } from '../components/PixelPanel'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { FloatingTextLayer } from '../components/FloatingTextLayer'
 import { WardenPlinth } from '../components/WardenPlinth'
-import { equipCosmetic, say, setScreen } from '../game/actions'
-import { COSMETICS, SLOT_LABEL } from '../game/config'
+import { equipRig, say, setScreen } from '../game/actions'
+import { RIGS, SLOT_LABEL } from '../game/config'
 import { useGameState } from '../game/store'
 import type { EquipSlot } from '../game/types'
 
 /* ==========================================================================
-   Regalia — pick a look. Locked pieces stay visible, chained shut, so the
-   player can see what the market is for.
+   The rig — pick a look. Locked pieces stay visible, chained shut, so the
+   player can see what the supply shelf is for. Cosmetic only: no piece of kit
+   moves a gauge, and none of it makes him a better trader.
    ========================================================================== */
 
 const SLOTS: EquipSlot[] = ['head', 'cloak', 'blade']
 
-export function WardrobeScreen() {
+export function RigScreen() {
   const s = useGameState()
   const [slot, setSlot] = useState<EquipSlot>('head')
-  const options = COSMETICS.filter((c) => c.slot === slot)
+  const options = RIGS.filter((r) => r.slot === slot)
 
   return (
     <div className="screen">
-      <ScreenHeader title="Regalia" />
+      <ScreenHeader title="The Rig" />
 
       <div className="screen__body">
         <FloatingTextLayer />
@@ -37,7 +38,7 @@ export function WardrobeScreen() {
               <span className="t-label t-dim">
                 {SLOTS.map((k) => {
                   const id = s.look[k]
-                  return id ? COSMETICS.find((c) => c.id === id)?.name : null
+                  return id ? RIGS.find((r) => r.id === id)?.name : null
                 })
                   .filter(Boolean)
                   .join(' · ')}
@@ -74,10 +75,10 @@ export function WardrobeScreen() {
                   price={owned ? undefined : { amount: item.price, currency: item.currency }}
                   onClick={() => {
                     if (!owned) {
-                      say('Locked. The market takes coin, not opinions.')
+                      say('Locked. The shelf takes bankroll, not opinions.')
                       return
                     }
-                    equipCosmetic(item.id)
+                    equipRig(item.id)
                   }}
                   ariaLabel={`${item.name}${owned ? '' : ', locked'}`}
                 />
@@ -87,7 +88,7 @@ export function WardrobeScreen() {
         </PixelPanel>
 
         <PixelButton
-          label="Buy more in the Market"
+          label="Buy more in Supply"
           icon="bag"
           variant="ghost"
           size="sm"

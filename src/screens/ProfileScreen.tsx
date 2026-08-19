@@ -6,23 +6,23 @@ import { PixelIcon, type IconName } from '../components/PixelIcon'
 import { PixelPanel } from '../components/PixelPanel'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { WardenPlinth } from '../components/WardenPlinth'
-import { renameWarden, setScreen } from '../game/actions'
+import { isAlarming, renameWarden, setScreen } from '../game/actions'
 import {
-  COSMETIC_BY_ID,
+  BANKROLL_BAR,
   NAME_MAX,
-  NEEDS,
-  NEED_LOW,
-  NEED_ORDER,
+  RIG_BY_ID,
   SLOT_LABEL,
+  STATS,
+  STAT_ORDER,
   WORLD,
 } from '../game/config'
-import { overallMood, useGameState } from '../game/store'
+import { bankrollHealth, overallForm, useGameState } from '../game/store'
 import type { EquipSlot } from '../game/types'
-import { formatAway } from '../game/util'
+import { formatAway, formatCash, formatSigned } from '../game/util'
 import { cloudAvailable, tgUserId, tgUserName, tgUsername } from '../telegram/telegram'
 
 /* ==========================================================================
-   Service record — who he is, how he is, and everything he has done.
+   Trading record — who he is, how he is reading it, and the whole book.
    Also the only place his name can be changed.
    ========================================================================== */
 
@@ -34,7 +34,10 @@ export function ProfileScreen() {
   const [draft, setDraft] = useState(s.name)
 
   const daysHeld = Math.max(1, Math.floor((Date.now() - s.firstVisit) / 86_400_000) + 1)
-  const mood = Math.round(overallMood(s.needs))
+  const form = Math.round(overallForm(s.stats))
+  const settled = s.tally.wins + s.tally.losses
+  const hitRate = settled > 0 ? Math.round((s.tally.wins / settled) * 100) : 0
+  const drawdown = s.peakBankroll > 0 ? Math.round((1 - s.bankroll / s.peakBankroll) * 100) : 0
   const synced = cloudAvailable()
   // A Telegram account id is what namespaces the save. No id means we are in a
   // plain browser (or a client that hides the user), whatever the SDK claims.
@@ -46,14 +49,14 @@ export function ProfileScreen() {
     if (first && handle) return `${first} (@${handle})`
     if (first) return first
     if (handle) return `@${handle}`
-    return linked ? 'Unnamed keeper' : 'Local guest'
+    return linked ? 'Unnamed account' : 'Local guest'
   })()
 
   const syncNote = synced
-    ? 'Held against your Telegram account, so he turns up on any device you sign into.'
+    ? 'Held against your Telegram account, so the book turns up on any device you sign into.'
     : linked
-      ? 'This Telegram client is too old for account storage. He lives on this device only.'
-      : 'Browser session. He lives in this browser only — open the app inside Telegram to carry him around.'
+      ? 'This Telegram client is too old for account storage. The book lives on this device only.'
+      : 'Browser session. The book lives in this browser only — open the app inside Telegram to carry it around.'
 
   function openRename(): void {
     setDraft(s.name)
@@ -67,7 +70,7 @@ export function ProfileScreen() {
 
   return (
     <div className="screen">
-      <ScreenHeader title="Service Record" />
+      <ScreenHeader title="Trading Record" />
 
       <div className="screen__body">
         <PixelPanel variant="ink" pad="none" rivets>
@@ -77,8 +80,8 @@ export function ProfileScreen() {
               <span className="profile__name t-gold">{s.name}</span>
               <span className="t-label t-dim">
                 {s.name === WORLD.hero
-                  ? `Warden of ${WORLD.hall} · Day ${daysHeld}`
-                  : `Roster says ${WORLD.hero} · Day ${daysHeld}`}
+                  ? `${WORLD.hall} · Day ${daysHeld}`
+                  : `Badge says ${WORLD.hero} · Day ${daysHeld}`}
               </span>
               <PixelButton
                 label="Rename him"
@@ -93,16 +96,16 @@ export function ProfileScreen() {
 
         <PixelPanel
           variant="darkwood"
-          title="Condition"
+          title="Form"
           titleIcon="flame"
           pad="sm"
           rivets
-          titleRight={<span className="t-label t-dim">{mood}%</span>}
+          titleRight={<span className="t-label t-dim">{form}%</span>}
         >
           <div className="profile__bars">
-            {NEED_ORDER.map((key) => {
-              const meta = NEEDS[key]
-              const value = s.needs[key]
+            {STAT_ORDER.map((key) => {
+              const meta = STATS[key]
+              const value = s.stats[key]
               return (
                 <PixelBar
                   key={key}
@@ -111,25 +114,53 @@ export function ProfileScreen() {
                   value={value}
                   color={meta.color}
                   colorDark={meta.colorDark}
-                  low={value < NEED_LOW}
+                  low={isAlarming(key, value)}
                   showValue
                 />
               )
             })}
+            <PixelBar
+              label={BANKROLL_BAR.label}
+              icon={BANKROLL_BAR.icon}
+              value={bankrollHealth(s.bankroll, s.peakBankroll)}
+              color={BANKROLL_BAR.color}
+              colorDark={BANKROLL_BAR.colorDark}
+              low={s.bankroll < 25}
+              valueText={formatCash(s.bankroll)}
+              showValue
+            />
           </div>
           <p className="t-label t-dim">
-            {mood >= 70
-              ? 'Holding the line. He would never say so.'
-              : mood >= 40
-                ? 'Managing. Barely a compliment.'
-                : 'Something down there needs seeing to.'}
+            {form >= 70
+              ? 'Reading it well. He would never say so.'
+              : form >= 40
+                ? 'Grinding. Barely a compliment.'
+                : 'Something on that board is eating him.'}
           </p>
         </PixelPanel>
 
-        <PixelPanel variant="wood" title="Keeper" titleIcon="warden" pad="md" rivets>
+        <PixelPanel variant="wood" title="The book" titleIcon="coin" pad="md" rivets>
           <ul className="detail__gains detail__gains--text">
-            <Row label="Keeper" value={keeper} icon="warden" />
-            <Row label="Save" value={synced ? 'Telegram account' : 'This device'} icon={synced ? 'check' : 'lock'} />
+            <Row label={WORLD.cashName} value={formatCash(s.bankroll)} icon="coin" />
+            <Row label="Peak" value={formatCash(s.peakBankroll)} icon="star" />
+            <Row
+              label="Off the peak"
+              value={drawdown > 0 ? `${drawdown}%` : 'at highs'}
+              icon={drawdown > 0 ? 'skull' : 'check'}
+            />
+            <Row label={WORLD.creditName} value={s.credits} icon="shard" />
+          </ul>
+          <p className="t-label t-dim">{WORLD.disclaimer}</p>
+        </PixelPanel>
+
+        <PixelPanel variant="darkwood" title="Account" titleIcon="warden" pad="md" rivets>
+          <ul className="detail__gains detail__gains--text">
+            <Row label="Signed in" value={keeper} icon="warden" />
+            <Row
+              label="Save"
+              value={synced ? 'Telegram account' : 'This device'}
+              icon={synced ? 'check' : 'lock'}
+            />
             <Row
               label="Last seen"
               value={s.awayMs > 60_000 ? `${formatAway(s.awayMs)} ago` : 'just now'}
@@ -139,11 +170,11 @@ export function ProfileScreen() {
           <p className="t-label t-dim">{syncNote}</p>
         </PixelPanel>
 
-        <PixelPanel variant="darkwood" title="Regalia" titleIcon="helm" pad="md" rivets>
+        <PixelPanel variant="wood" title="The rig" titleIcon="helm" pad="md" rivets>
           <ul className="detail__gains detail__gains--text">
             {SLOTS.map((slot) => {
               const id = s.look[slot]
-              const item = id ? COSMETIC_BY_ID[id] : undefined
+              const item = id ? RIG_BY_ID[id] : undefined
               return (
                 <Row
                   key={slot}
@@ -155,33 +186,49 @@ export function ProfileScreen() {
             })}
           </ul>
           <PixelButton
-            label="Change regalia"
+            label="Change the rig"
             icon="helm"
             variant="ghost"
             size="sm"
             full
-            onClick={() => setScreen('wardrobe')}
+            onClick={() => setScreen('rig')}
           />
         </PixelPanel>
 
-        <PixelPanel variant="wood" title="Tally" titleIcon="star" pad="md" rivets>
+        <PixelPanel variant="darkwood" title="Tally" titleIcon="star" pad="md" rivets>
           <ul className="detail__gains tally">
-            <Row label="Days on post" value={daysHeld} icon="torch" />
-            <Row label="Times greeted" value={s.stats.pets} icon="star" />
-            <Row label="Meals served" value={s.stats.meals} icon="stew" />
-            <Row label="Naps taken" value={s.stats.naps} icon="bed" />
-            <Row label="Armour scrubbed" value={s.stats.washes} icon="brush" />
-            <Row label="Rounds trained" value={s.stats.trains} icon="dummy" />
-            <Row label="Longest chain" value={s.stats.bestCombo} icon="sword" />
-            <Row label="Visits" value={s.visits} icon="check" />
+            <Row label="Days at the desk" value={daysHeld} icon="torch" />
+            <Row label="PnL checks" value={s.tally.taps} icon="star" />
+            <Row label="Notes read" value={s.tally.researches} icon="stew" />
+            <Row label="Breaks taken" value={s.tally.recovers} icon="bed" />
+            <Row label="Hedges put on" value={s.tally.hedges} icon="brush" />
+            <Row label="Board scans" value={s.tally.scans} icon="dice" />
+            <Row label="Sim positions" value={s.tally.bets} icon="terminal" />
+            <Row
+              label="Settled"
+              value={settled > 0 ? `${s.tally.wins}W / ${s.tally.losses}L · ${hitRate}%` : 'none yet'}
+              icon="check"
+            />
+            <Row label="Best run" value={s.tally.bestStreak} icon="bolt" />
+            <Row
+              label="Best fill"
+              value={s.tally.bestWin > 0 ? formatSigned(s.tally.bestWin) : '—'}
+              icon="coin"
+            />
+            <Row
+              label="Worst fill"
+              value={s.tally.worstLoss > 0 ? formatSigned(-s.tally.worstLoss) : '—'}
+              icon="skull"
+            />
+            <Row label="Visits" value={s.visits} icon="gear" />
           </ul>
           <p className="t-label t-dim">
-            {WORLD.coinName} {s.coins} · {WORLD.shardName} {s.shards}. Progress saves itself.
+            {WORLD.cashName} moves on fills and fees. {WORLD.creditName} come from showing up.
           </p>
         </PixelPanel>
 
         <PixelButton
-          label="Back to the Hall"
+          label={`Back to ${WORLD.hall}`}
           icon="arrowLeft"
           variant="wood"
           size="sm"
@@ -200,7 +247,7 @@ export function ProfileScreen() {
       >
         <p className="profile__hint">
           Letters, digits, spaces and the odd apostrophe. Up to {NAME_MAX} characters. Leave it
-          empty and he goes back to the name on the roster.
+          empty and he goes back to the name on the badge.
         </p>
         <input
           className="field"
@@ -214,14 +261,14 @@ export function ProfileScreen() {
           autoComplete="off"
           autoCapitalize="words"
           autoFocus
-          aria-label="The warden's name"
+          aria-label="The trader's name"
         />
         <div className="profile__hint-row">
           <span className="t-label t-dim">
             {draft.length}/{NAME_MAX}
           </span>
           <button type="button" className="linkbtn" onClick={() => setDraft(WORLD.hero)}>
-            Use the roster name
+            Use the name on the badge
           </button>
         </div>
       </Modal>

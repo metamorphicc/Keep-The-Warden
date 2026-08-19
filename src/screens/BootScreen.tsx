@@ -21,9 +21,9 @@ const TITLE_W = 132
 const TITLE_H = 116
 
 export function BootScreen() {
-  const { look, needs, awayMs, visits } = useGame((s) => ({
+  const { look, stats, awayMs, visits } = useGame((s) => ({
     look: s.look,
-    needs: s.needs,
+    stats: s.stats,
     awayMs: s.awayMs,
     visits: s.visits,
   }))
@@ -43,11 +43,11 @@ export function BootScreen() {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame)
       drawPlinth(ctx, now)
-      drawWardenPortrait(ctx, TITLE_W / 2, TITLE_H - 12, look, now, needs)
+      drawWardenPortrait(ctx, TITLE_W / 2, TITLE_H - 12, look, now, stats)
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [look, needs])
+  }, [look, stats])
 
   const begin = () => {
     unlockAudio()
@@ -59,11 +59,11 @@ export function BootScreen() {
       <div className="boot__vignette" aria-hidden="true" />
 
       <div className="boot__top">
-        <p className="t-label t-dim boot__eyebrow">{WORLD.keep} · Lower Gate</p>
+        <p className="t-label t-dim boot__eyebrow">{WORLD.subtitle}</p>
         <h1 className="boot__title t-shadow">
-          <span>Keep</span>
-          <span className="boot__title-small">the</span>
-          <span>Warden</span>
+          <span>Quantum</span>
+          <span className="boot__title-small">— sim —</span>
+          <span>Pit</span>
         </h1>
         <div className="boot__rule">
           <span />
@@ -78,7 +78,7 @@ export function BootScreen() {
         <p className="t-body t-center boot__line">{line}</p>
 
         <PixelButton
-          label={visits > 1 ? 'Return to the Hall' : 'Take the Post'}
+          label={visits > 1 ? 'Back to the Pit' : 'Take the Desk'}
           icon="torch"
           variant="gold"
           size="lg"
@@ -93,7 +93,7 @@ export function BootScreen() {
         ) : null}
 
         <p className="t-label boot__version">
-          v{GAME_VERSION} · no combat, no coins that matter
+          v{GAME_VERSION} · {WORLD.disclaimer}
         </p>
       </div>
     </div>

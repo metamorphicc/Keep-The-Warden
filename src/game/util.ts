@@ -41,3 +41,30 @@ export function formatAway(ms: number): string {
 export function formatSeconds(ms: number): string {
   return `${Math.max(0, Math.ceil(ms / 1000))}s`
 }
+
+/* --------------------------------------------------------------------------
+   Money and prices
+
+   All of it simulated. The dollar sign is a costume.
+   -------------------------------------------------------------------------- */
+
+export function formatCash(v: number): string {
+  const n = Math.round(v)
+  const sign = n < 0 ? '-' : ''
+  return `${sign}$${Math.abs(n).toLocaleString('en-US')}`
+}
+
+/** Always carries its sign — for PnL lines, where the sign is the whole story. */
+export function formatSigned(v: number): string {
+  const n = Math.round(v)
+  return `${n >= 0 ? '+' : '-'}$${Math.abs(n).toLocaleString('en-US')}`
+}
+
+/** A share price, in cents, the way a prediction market quotes it. */
+export function formatPrice(p: number): string {
+  return `${Math.round(p * 100)}c`
+}
+
+export function formatProb(p: number): string {
+  return `${Math.round(p * 100)}%`
+}

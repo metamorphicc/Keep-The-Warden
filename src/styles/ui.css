@@ -693,10 +693,10 @@
 .floater--bad {
   color: var(--ember-lit);
 }
-.floater--coin {
+.floater--cash {
   color: var(--gold-lit);
 }
-.floater--shard {
+.floater--credit {
   color: var(--spirit-lit);
 }
 .floater--plain {
@@ -785,4 +785,87 @@
 
 .shead__spacer {
   flex: 0 0 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Result toasts — a carved strip that drops in under the top edge
+   -------------------------------------------------------------------------- */
+
+.toasts {
+  position: absolute;
+  top: calc(var(--sa-top) + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  max-width: 300px;
+  background-color: var(--wood-dark);
+  background-image: var(--tex-plank);
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.14),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.5),
+    0 3px 0 0 var(--ink);
+  animation: kw-toast 2600ms steps(16, end) both;
+}
+
+/* the coloured spine on the left tells you the verdict before you read it */
+.toast__mark {
+  flex: 0 0 6px;
+  background: var(--bone-deep);
+}
+
+.toast__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+}
+
+.toast__text {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--bone);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.toast__sub {
+  font-size: 9px;
+  color: var(--bone-dim);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.toast--good .toast__mark {
+  background: var(--teal);
+  box-shadow: inset -2px 0 0 0 var(--teal-deep);
+}
+.toast--good .toast__sub {
+  color: var(--teal-lit);
+}
+
+.toast--bad .toast__mark {
+  background: var(--ember);
+  box-shadow: inset -2px 0 0 0 var(--ember-deep);
+}
+.toast--bad .toast__sub {
+  color: var(--ember-lit);
+}
+
+.toast--plain .toast__mark {
+  background: var(--gold-dark);
+  box-shadow: inset -2px 0 0 0 var(--ink);
 }

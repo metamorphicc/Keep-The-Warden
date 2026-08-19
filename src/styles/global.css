@@ -254,6 +254,26 @@ button {
   }
 }
 
+/* a toast drops in off the top edge, hangs, then snaps back out */
+@keyframes kw-toast {
+  0% {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  12% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  84% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+
 @keyframes kw-flicker {
   0%,
   100% {

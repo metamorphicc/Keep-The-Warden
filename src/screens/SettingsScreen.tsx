@@ -11,8 +11,8 @@ import { closeApp, isTelegram, telegramInfo } from '../telegram/telegram'
 import type { IconName } from '../components/PixelIcon'
 
 /* ==========================================================================
-   Keep — settings, the way into the service record, and the one destructive
-   button.
+   The back office — settings, the way into the trading record, and the one
+   destructive button.
    ========================================================================== */
 
 const TOGGLES: { key: 'sound' | 'haptics' | 'reduceMotion'; label: string; icon: IconName; note: string }[] =
@@ -21,7 +21,7 @@ const TOGGLES: { key: 'sound' | 'haptics' | 'reduceMotion'; label: string; icon:
     { key: 'haptics', label: 'Rumble', icon: 'bolt', note: 'Telegram haptics on each action.' },
     {
       key: 'reduceMotion',
-      label: 'Still Hall',
+      label: 'Still Pit',
       icon: 'gear',
       note: 'Freezes fire, dust and shake.',
     },
@@ -34,7 +34,7 @@ export function SettingsScreen() {
 
   return (
     <div className="screen">
-      <ScreenHeader title="The Keep" showCurrency={false} />
+      <ScreenHeader title={WORLD.keep} showCurrency={false} />
 
       <div className="screen__body">
         <PixelPanel variant="darkwood" title="Comforts" titleIcon="gear" pad="sm" rivets>
@@ -64,15 +64,15 @@ export function SettingsScreen() {
           </ul>
         </PixelPanel>
 
-        <PixelPanel variant="ink" title="Hall" titleIcon="torch" pad="md" rivets>
+        <PixelPanel variant="ink" title="Desk" titleIcon="torch" pad="md" rivets>
           <div className="stack">
             <PixelButton
-              label="Service record"
+              label="Trading record"
               icon="warden"
               variant="wood"
               size="sm"
               full
-              sublabel="Name, condition, tally"
+              sublabel="Name, form, the book"
               onClick={() => setScreen('profile')}
             />
             <PixelButton
@@ -84,7 +84,7 @@ export function SettingsScreen() {
               onClick={saveNow}
             />
             <PixelButton
-              label="Back to the Hall"
+              label={`Back to ${WORLD.hall}`}
               icon="arrowLeft"
               variant="wood"
               size="sm"
@@ -102,7 +102,7 @@ export function SettingsScreen() {
               />
             ) : null}
             <PixelButton
-              label="Abandon the post"
+              label="Close the account"
               icon="skull"
               variant="danger"
               size="sm"
@@ -118,13 +118,15 @@ export function SettingsScreen() {
           {tg ? ` · Telegram ${tg.platform} ${tg.version}` : ' · browser'}
         </p>
         <p className="t-label t-dim t-center screen__foot">
-          An original game. No combat, no wallets, no chain.
+          {WORLD.disclaimer}
+          <br />
+          No wallet, no chain, no deposits. It is a toy book on a wooden desk.
         </p>
       </div>
 
       <Modal
         open={confirming}
-        title="Abandon the post?"
+        title="Close the account?"
         confirmLabel="Wipe it"
         cancelLabel="Keep it"
         danger
@@ -135,8 +137,8 @@ export function SettingsScreen() {
           setScreen('room')
         }}
       >
-        Everything goes: the tally, the coin, the regalia. He will not remember you, which is
-        arguably a mercy.
+        Everything goes: the tally, the {WORLD.cashName.toLowerCase()}, the rig. He will not
+        remember you, which is arguably a mercy.
       </Modal>
     </div>
   )

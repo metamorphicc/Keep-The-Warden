@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { doAction, petWarden, say, setScreen } from '../game/actions'
-import { COPY } from '../game/copy'
+import { checkPnl, doAction, propLine, say, setScreen } from '../game/actions'
 import { burst, onFx } from '../game/fx'
 import { play } from '../game/sound'
 import { getState } from '../game/store'
@@ -80,18 +79,19 @@ export function RoomCanvas() {
       const phase = act.duration > 0 ? clamp(elapsed / act.duration, 0, 1) : 1
       const kind = phase >= 1 ? 'idle' : act.kind
 
-      const grime = s.needs.clean < 20 ? 2 : s.needs.clean < 45 ? 1 : 0
-      // the hall darkens while he sleeps
-      const dim = kind === 'sleep' ? Math.sin(clamp(phase * 2.4, 0, 1) * Math.PI * 0.5) * 0.55 : 0
-      const spirit = s.needs.spirit / 100
+      // the hall goes to seed when he runs hot and stops looking after it
+      const grime = s.stats.heat > 82 ? 2 : s.stats.heat > 58 ? 1 : 0
+      // the hall darkens while he is out cold at the desk
+      const dim = kind === 'recover' ? Math.sin(clamp(phase * 2.4, 0, 1) * Math.PI * 0.5) * 0.55 : 0
+      const edge = s.stats.edge / 100
 
-      const pose = poseFor({ activity: kind, phase, t: reduce ? 1200 : now, needs: s.needs })
+      const pose = poseFor({ activity: kind, phase, t: reduce ? 1200 : now, stats: s.stats })
 
       const opts = {
         t: reduce ? 0 : now,
         grime,
         dim,
-        spirit,
+        edge,
         // his shadow walks to the mat with him and thins as he folds up
         heroShift: pose.shift,
         heroShadow: 1 - pose.sit * 0.72,
@@ -116,7 +116,7 @@ export function RoomCanvas() {
         if (Math.random() < 0.5) particles.spawn('ember', 166, torchY, 1, 0.6)
       }
       // steady sleep marks
-      if (kind === 'sleep' && phase > 0.2 && phase < 0.85 && Math.random() < dt / 900) {
+      if (kind === 'recover' && phase > 0.2 && phase < 0.85 && Math.random() < dt / 900) {
         particles.spawn('zzz', SCENE.heroX - 48, SCENE.heroY - 40, 1, 0.8)
       }
 
@@ -157,24 +157,28 @@ export function RoomCanvas() {
     const hit = hitTest(x, y)
     switch (hit) {
       case 'hero':
-        petWarden(x, y)
+        checkPnl(x, y)
         break
-      case 'cauldron':
-        say(COPY.cauldron())
-        setScreen('feed')
+      case 'terminal':
+        say(propLine('terminal'))
+        setScreen('scan')
+        break
+      case 'urn':
+        say(propLine('urn'))
+        setScreen('research')
         break
       case 'bed':
-        say(COPY.bed())
-        doAction('sleep')
+        say(propLine('bed'))
+        doAction('recover')
         break
       case 'torchL':
       case 'torchR':
-        say(COPY.torch())
+        say(propLine(hit))
         play('spark')
         emberPuff(hit)
         break
       case 'door':
-        say(COPY.door())
+        say(propLine('door'))
         play('deny')
         break
       default:
@@ -190,7 +194,7 @@ export function RoomCanvas() {
         ref={canvasRef}
         className="stage__canvas"
         onPointerDown={onPointerDown}
-        aria-label="The Deep Hall. Tap the Warden."
+        aria-label="The Pit. Tap the trader to check the PnL."
         role="img"
       />
     </div>

@@ -72,7 +72,7 @@ export function PixelButton({
       </span>
       {price && (
         <span className="btn__price">
-          <PixelIcon name={price.currency === 'coins' ? 'coin' : 'shard'} size={12} />
+          <PixelIcon name={price.currency === 'bankroll' ? 'coin' : 'shard'} size={12} />
           {price.amount}
         </span>
       )}

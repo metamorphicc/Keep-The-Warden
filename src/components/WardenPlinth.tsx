@@ -5,9 +5,9 @@ import { drawWardenPortrait } from '../render/warden'
 import { P } from '../styles/palette'
 
 /* ==========================================================================
-   The warden, standing in a lit alcove. Used by the Regalia screen and the
-   service record. Draws at native pixel size and lets CSS do the upscale, so
-   the sprite stays crisp at any panel width.
+   The trader, standing in a lit alcove. Used by the Rig screen and the service
+   record. Draws at native pixel size and lets CSS do the upscale, so the
+   sprite stays crisp at any panel width.
    ========================================================================== */
 
 export interface WardenPlinthProps {
@@ -41,7 +41,7 @@ export function WardenPlinth({
       const s = getState()
       const t = s.settings.reduceMotion ? 1200 : now
       drawAlcove(ctx, width, height, t)
-      drawWardenPortrait(ctx, width / 2, height - 8, s.look, t, s.needs)
+      drawWardenPortrait(ctx, width / 2, height - 8, s.look, t, s.stats)
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)

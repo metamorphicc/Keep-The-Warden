@@ -1,23 +1,25 @@
 import { PixelIcon } from './PixelIcon'
+import { formatCash } from '../game/util'
 
 export interface CurrencyBarProps {
-  coins: number
-  shards: number
+  /** simulated cash */
+  bankroll: number
+  credits: number
   className?: string
   compact?: boolean
 }
 
-/** Two carved counters: marks and spirit shards. */
-export function CurrencyBar({ coins, shards, className, compact = false }: CurrencyBarProps) {
+/** Two carved counters: the simulated bankroll and the slower currency. */
+export function CurrencyBar({ bankroll, credits, className, compact = false }: CurrencyBarProps) {
   return (
     <div className={`cur ${compact ? 'cur--compact' : ''} ${className ?? ''}`}>
       <span className="cur__item">
         <PixelIcon name="coin" size={14} />
-        <b>{coins}</b>
+        <b>{formatCash(bankroll)}</b>
       </span>
       <span className="cur__item">
         <PixelIcon name="shard" size={14} />
-        <b>{shards}</b>
+        <b>{credits}</b>
       </span>
     </div>
   )

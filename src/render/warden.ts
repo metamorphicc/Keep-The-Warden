@@ -1,11 +1,11 @@
 import { P } from '../styles/palette'
 import { noise2, px, pxa, pxLine, type Ctx } from './draw'
-import type { ActivityKind, EquippedLook, Needs } from '../game/types'
+import type { ActivityKind, EquippedLook, Stats } from '../game/types'
 
 /* ==========================================================================
-   Warden Halvard — an original elderly pixel warrior.
+   Old Halvard — an original elderly pixel trader who used to guard a door.
    Built from primitives instead of a sprite sheet so every pose, every
-   equipment variant and every "tired / filthy / annoyed" state is one set of
+   equipment variant and every "fried / cooked / annoyed" state is one set of
    numbers away. Origin is the point between his boots.
 
    Body plan (px above the feet):
@@ -37,12 +37,12 @@ export interface Pose {
   swordLen: number
   bladesUp: boolean
   capeSway: number
-  /** 0..1 strength of the spirit aura */
+  /** 0..1 strength of the edge aura */
   aura: number
-  /** 0..2 grime */
+  /** 0..2 grime — sweat and printer soot, i.e. Heat */
   dirt: number
   /** prop held in the left hand */
-  prop: 'none' | 'bowl' | 'brush' | 'dice'
+  prop: 'none' | 'ledger' | 'slate' | 'chips'
   /** walking legs (0 = still) */
   step: number
   /** flash frame on the blades */
@@ -85,38 +85,39 @@ export interface PoseInput {
   /** 0..1 through the current activity */
   phase: number
   t: number
-  needs: Needs
+  stats: Stats
 }
 
-export function poseFor({ activity, phase, t, needs }: PoseInput): Pose {
+export function poseFor({ activity, phase, t, stats }: PoseInput): Pose {
   const p = basePose()
 
   const breathe = Math.sin(t / 620)
   p.bob = breathe > 0.5 ? -1 : 0
   p.capeSway = Math.sin(t / 900) * 1.5
-  p.aura = Math.max(0.08, needs.spirit / 100)
-  p.dirt = needs.clean < 18 ? 2 : needs.clean < 42 ? 1 : 0
+  // A sharp thesis glows. A cooked one sweats.
+  p.aura = Math.max(0.08, stats.edge / 100)
+  p.dirt = stats.heat > 82 ? 2 : stats.heat > 58 ? 1 : 0
 
-  // baseline demeanour from the needs
-  if (needs.energy < 26) {
+  // baseline demeanour from the stats
+  if (stats.focus < 26) {
     p.eyes = 'tired'
     p.headDrop = 2
     p.bob = breathe > 0.5 ? 0 : 1
   }
-  if (needs.mood < 26) {
+  if (stats.heat > 74) {
     p.eyes = 'angry'
     p.mouth = 'flat'
     p.headTilt = -1
   }
-  if (needs.hunger < 26) {
+  if (stats.edge < 26) {
     p.lean = -1
   }
   // blink
   if (p.eyes === 'open' && (t / 1000) % 5.4 < 0.16) p.eyes = 'closed'
 
   switch (activity) {
-    case 'pet': {
-      // quick salute: blades snap up, head lifts, sparks
+    case 'pnl': {
+      // quick flourish: probes snap up, head lifts, sparks off the book
       const k = Math.sin(phase * Math.PI)
       p.bladesUp = true
       p.swordL = (118 - 92 * k) * D
@@ -131,21 +132,21 @@ export function poseFor({ activity, phase, t, needs }: PoseInput): Pose {
       break
     }
 
-    case 'eat': {
-      const bite = Math.sin(phase * Math.PI * 3)
-      p.prop = 'bowl'
+    case 'research': {
+      const scan = Math.sin(phase * Math.PI * 3)
+      p.prop = 'ledger'
       p.armL = { x: -10, y: 12 }
-      p.armR = { x: 4, y: 6 + bite * 3 }
+      p.armR = { x: 4, y: 6 + scan * 3 }
       p.swordR = 62 * D
-      p.headDrop = 1 + (bite > 0 ? 1 : 0)
-      p.mouth = bite > 0.3 ? 'open' : 'flat'
+      p.headDrop = 1 + (scan > 0 ? 1 : 0)
+      p.mouth = scan > 0.3 ? 'open' : 'flat'
       p.eyes = 'open'
-      p.swordLen = 0 // sheathed while eating
+      p.swordLen = 0 // probes down while he reads
       break
     }
 
-    case 'sleep': {
-      // shuffle over to the straw, fold up, snore
+    case 'recover': {
+      // shuffle over to the cot, fold up, snore
       const walkIn = Math.min(1, phase / 0.14)
       const walkOut = phase > 0.86 ? (phase - 0.86) / 0.14 : 0
       const settle = Math.min(1, Math.max(0, (phase - 0.14) / 0.1))
@@ -164,10 +165,10 @@ export function poseFor({ activity, phase, t, needs }: PoseInput): Pose {
       break
     }
 
-    case 'wash': {
-      const scrub = Math.sin(phase * Math.PI * 7)
-      p.prop = 'brush'
-      p.armL = { x: -4 + scrub * 4, y: 8 + Math.abs(scrub) * 2 }
+    case 'hedge': {
+      const work = Math.sin(phase * Math.PI * 7)
+      p.prop = 'slate'
+      p.armL = { x: -4 + work * 4, y: 8 + Math.abs(work) * 2 }
       p.armR = { x: 9, y: 15 }
       p.swordLen = 0
       p.headDrop = 1
@@ -176,7 +177,7 @@ export function poseFor({ activity, phase, t, needs }: PoseInput): Pose {
       break
     }
 
-    case 'play': {
+    case 'scan': {
       const hop = Math.sin(phase * Math.PI * 3)
       p.bob = -Math.round(Math.abs(hop) * 3)
       p.bladesUp = true
@@ -191,8 +192,8 @@ export function poseFor({ activity, phase, t, needs }: PoseInput): Pose {
       break
     }
 
-    case 'train': {
-      // wind up, then thrust
+    case 'bet': {
+      // wind up, then commit
       const k = phase < 0.4 ? -phase / 0.4 : (phase - 0.4) / 0.6
       p.lean = Math.round(k * 4)
       p.shift = Math.round(k * 3)
@@ -602,21 +603,24 @@ function drawHead(ctx: Ctx, cx: number, groundY: number, pose: Pose, kit: Kit): 
 
 function drawProp(ctx: Ctx, hx: number, hy: number, pose: Pose): void {
   switch (pose.prop) {
-    case 'bowl':
-      px(ctx, hx - 4, hy - 1, 9, 2, P.bone)
-      px(ctx, hx - 3, hy + 1, 7, 3, P.boneDim)
-      px(ctx, hx - 2, hy - 2, 5, 1, P.ember)
-      px(ctx, hx - 5, hy - 1, 1, 3, P.ink)
-      px(ctx, hx + 4, hy - 1, 1, 3, P.ink)
+    case 'ledger':
+      // a small open book: bone pages, a wooden spine, one red line
+      px(ctx, hx - 5, hy - 3, 11, 6, P.woodDark)
+      px(ctx, hx - 4, hy - 2, 4, 4, P.bone)
+      px(ctx, hx + 1, hy - 2, 4, 4, P.boneDim)
+      px(ctx, hx, hy - 3, 1, 6, P.ink)
+      px(ctx, hx - 3, hy, 2, 1, P.bloodLit)
       break
-    case 'brush':
+    case 'slate':
+      // a wax slate and a stylus, teal chalk dust coming off it
       px(ctx, hx - 3, hy - 2, 7, 3, P.wood)
       px(ctx, hx - 3, hy - 2, 7, 1, P.woodLit)
       for (let i = 0; i < 7; i += 2) px(ctx, hx - 3 + i, hy + 1, 1, 3, P.boneDim)
       pxa(ctx, hx - 5, hy - 5, 3, 3, P.tealLit, 0.7)
       pxa(ctx, hx + 3, hy - 7, 2, 2, P.tealLit, 0.6)
       break
-    case 'dice':
+    case 'chips':
+      // two market tokens, pip up
       px(ctx, hx - 4, hy - 3, 4, 4, P.bone)
       px(ctx, hx - 3, hy - 2, 1, 1, P.ink)
       px(ctx, hx + 1, hy - 1, 4, 4, P.bone)
@@ -702,16 +706,16 @@ export function drawWarden(
   }
 }
 
-/** Portrait version for the wardrobe preview: same sprite, static idle pose. */
+/** Portrait version for the rig preview: same sprite, static idle pose. */
 export function drawWardenPortrait(
   ctx: Ctx,
   cx: number,
   groundY: number,
   look: EquippedLook,
   t: number,
-  needs: Needs,
+  stats: Stats,
 ): void {
-  const pose = poseFor({ activity: 'idle', phase: 0, t, needs })
+  const pose = poseFor({ activity: 'idle', phase: 0, t, stats })
   pose.bladesUp = true
   pose.swordL = 130 * D
   pose.swordR = 50 * D
