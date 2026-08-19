@@ -1,19 +1,37 @@
-# Keep The Warden
+# Quantum Pit
 
-A pixel-art care/idle game built as a **Telegram Mini App**. You look after an
-old dual-sword warden who guards a door nobody opens any more. Feed him, let him
-sleep, scrub his armour, play dice, send him at the training dummy, and tap him
-when he is sulking.
+**A Polymarket trader simulator.** Paper trading only — no real money, no real
+orders, no wallet, no chain. The bankroll is a number in a save file and every
+market on the board is invented.
+
+A pixel-art care/idle game built as a **Telegram Mini App**. Old Halvard held a
+gate for forty winters; now he holds positions. Same wooden room, same bad
+lighting, different kind of door. You read the board with him, size simulated
+tickets, keep his Edge sharp and his Heat down, and tap him when you want to know
+where the PnL stands.
 
 Original world, original character, original item names. No combat, no
-blockchain, no NFTs, no wallet login. React + TypeScript + Vite, one HTML file,
-a handful of procedurally drawn `<canvas>` scenes, `localStorage`, and one
-zero-dependency serverless function for the bot's `/start` message.
+blockchain, no NFTs, no wallet login, no on-chain anything. React + TypeScript +
+Vite, one HTML file, a handful of procedurally drawn `<canvas>` scenes,
+`localStorage`, and one zero-dependency serverless function for the bot's
+`/start` message.
 
-Every player gets their own warden: the save is namespaced by Telegram account
-id and mirrored into Telegram's `CloudStorage`, so progress follows the player to
-another device without a backend. He can be renamed, and the **Service Record**
-screen shows his name, condition, regalia and lifetime tally.
+Every player gets their own trader: the save is namespaced by Telegram account id
+and mirrored into Telegram's `CloudStorage`, so progress follows the player to
+another device without a backend. He can be renamed, and the **Trading Record**
+screen shows his name, form, the book and a lifetime tally.
+
+### What "simulator only" means here
+
+There is no market data feed and no order router anywhere in this repo. The six
+questions in [src/game/config.ts](src/game/config.ts) are hand-written fiction
+with a `base` probability and a `drift`; a scan re-rolls them locally with
+`Math.random()`. A fill resolves against that local number, tilted a few points
+by the player's Edge, and adjusts a `bankroll` field. Nothing leaves the device,
+nothing is fetched, nothing is signed, and no funds of any kind can be deposited
+or withdrawn. The disclaimer is printed on the boot screen, the board, the ticket
+desk, the record and the back office because it is the actual architecture, not a
+legal fig leaf.
 
 ---
 
@@ -69,15 +87,17 @@ haptics, the native back button and the theme handshake — nothing else.
 Useful during development:
 
 - Progress lives in `localStorage` under `ktw.save.v1:<telegram-user-id>`, or
-  `ktw.save.v1:guest` in a plain browser. Clear that key (or use **The Keep →
-  Abandon the post**) for a fresh install.
+  `ktw.save.v1:guest` in a plain browser. Clear that key (or use **The Back
+  Office → Close the account**) for a fresh install.
 - Telegram `CloudStorage` is only available inside Telegram 6.9+, so in a browser
-  the save is local-only. **Service Record → Keeper** says which of the two you
+  the save is local-only. **Trading Record → Account** says which of the two you
   are looking at.
-- Needs decay from wall-clock time, so closing the tab for an hour has a real
-  effect. Offline decay is capped at 36 hours (`MAX_OFFLINE_HOURS`).
-- **The Keep → Still Hall** freezes fire, dust and screen shake, which makes
-  screenshots and reduced-motion testing easier.
+- Gauges drift from wall-clock time, so closing the tab for an hour has a real
+  effect. Offline drift is capped at 36 hours (`MAX_OFFLINE_HOURS`) and floored
+  at 18 points (`OFFLINE_FLOOR`), so a week away leaves a cold desk rather than a
+  locked one. Heat is exempt — it cools all the way down while you are gone.
+- **The Back Office → Still Pit** freezes fire, dust and screen shake, which
+  makes screenshots and reduced-motion testing easier.
 
 ---
 
@@ -143,7 +163,7 @@ Vercel → your project → **Settings → Environment Variables**. Add these to
 | --- | --- | --- |
 | `BOT_TOKEN` | yes | The token BotFather gave you. Never commit it. |
 | `WEBHOOK_SECRET` | recommended | Any random string. Telegram echoes it back in the `X-Telegram-Bot-Api-Secret-Token` header; requests without it are rejected with 401. |
-| `APP_URL` | no | Public HTTPS origin of the Mini App, e.g. `https://keep-the-warden.vercel.app`. Falls back to Vercel's own `VERCEL_PROJECT_PRODUCTION_URL`, then `VERCEL_URL`. |
+| `APP_URL` | no | Public HTTPS origin of the Mini App, e.g. `https://quantum-pit.vercel.app`. Falls back to Vercel's own `VERCEL_PROJECT_PRODUCTION_URL`, then `VERCEL_URL`. |
 | `START_IMAGE_URL` | no | Absolute URL of the `/start` picture. Defaults to `<APP_URL>/start-banner.png`. |
 
 Redeploy after adding them — Vercel only injects env vars at build/boot time.
@@ -188,9 +208,9 @@ it, in order of least effort:
 2. **Host it anywhere.** Set `START_IMAGE_URL` to any public HTTPS image URL.
    Telegram fetches it directly.
 3. **Regenerate it.** Edit [tools/make-banner.mjs](tools/make-banner.mjs) — the
-   output size is `W`/`H`/`SCALE` at the top, and the composition (the warden's
-   equipped look, the `TITLE` plaque and the `SUB` corner label) is the last
-   forty lines — then:
+   output size is `W`/`H`/`SCALE` at the top, and the composition (his equipped
+   rig, the `TITLE` plaque and the `SUB` corner label) is the last forty lines —
+   then:
 
    ```bash
    npm run banner
@@ -198,7 +218,8 @@ it, in order of least effort:
 
 The caption lives in the `CAPTION` constant at the top of
 [api/telegram.ts](api/telegram.ts) (Telegram HTML: `<b>`, `<i>`, `<a>`), and the
-button label in `BUTTON_TEXT` just below it.
+button label in `BUTTON_TEXT` just below it. Both repeat the paper-trading
+disclaimer — keep it there.
 
 ---
 
@@ -220,14 +241,13 @@ Then, in Telegram:
 1. Open [@BotFather](https://t.me/BotFather) and send `/newbot`. Pick a display
    name and a username ending in `bot`. Keep the token it gives you private.
 2. Send `/newapp` and choose your bot. BotFather asks for:
-   - **Title** — `Keep The Warden`
-   - **Short description** — `Mind the old man in the hall.`
+   - **Title** — `Quantum Pit`
+   - **Short description** — `Paper-trade invented markets. No real money.`
    - **Photo** — 640×360
    - **Demo GIF** — optional, send `/empty` to skip
    - **Web App URL** — your HTTPS URL (the tunnel URL while developing, your
      static host in production)
-   - **Short name** — e.g. `warden`; this becomes
-     `https://t.me/<yourbot>/warden`
+   - **Short name** — e.g. `pit`; this becomes `https://t.me/<yourbot>/pit`
 3. Open that `t.me` link, or `/setmenubutton` → your bot → **Edit menu button
    URL** to put the game behind the chat's menu button.
 
@@ -241,8 +261,8 @@ All of it is in [src/telegram/telegram.ts](src/telegram/telegram.ts):
 
 - `ready()` and `expand()` on boot
 - header / background / bottom-bar colours matched to the game's palette
-- `disableVerticalSwipes()` on clients that support it, so tapping the warden
-  never drags the sheet closed
+- `disableVerticalSwipes()` on clients that support it, so tapping him never
+  drags the sheet closed
 - `BackButton` wired to the in-game back navigation
 - `HapticFeedback` on every action (respects the **Rumble** setting)
 - `viewportStableHeight` and the safe-area insets, republished as the
@@ -270,39 +290,41 @@ Every one of those is feature-detected; older clients simply skip them.
     ├── main.tsx               # mount + stylesheet imports
     ├── App.tsx                # Telegram handshake, cloud pull, 1s game clock, screen router
     ├── game
-    │   ├── types.ts           # Needs, SaveData, GameState, item defs
-    │   ├── config.ts          # WORLD names, save keys, name sanitiser, decay, actions, foods, regalia
-    │   ├── store.ts           # useSyncExternalStore store + tick() decay clock
-    │   ├── persistence.ts     # per-account localStorage + CloudStorage mirror, migration, offline decay
-    │   ├── actions.ts         # every player verb: feed, sleep, wash, play, train, pet, buy, equip, rename
+    │   ├── types.ts           # Stats, SaveData, GameState, market/supply/rig defs, TradeResult
+    │   ├── config.ts          # WORLD names, save keys, drift, actions, the six mock markets, fill maths, supplies, rigs
+    │   ├── store.ts           # useSyncExternalStore store + tick() drift clock
+    │   ├── persistence.ts     # per-account localStorage + CloudStorage mirror, migration, offline drift
+    │   ├── actions.ts         # every player verb: research, hedge, recover, scan, sim bet, check PnL, buy, equip, rename
     │   ├── copy.ts            # all dry, slightly grim dialogue lines
-    │   ├── fx.ts              # tiny pub/sub bus for particle bursts, floating text, shake
+    │   ├── fx.ts              # tiny pub/sub bus for particle bursts, floating text, toasts, shake
     │   ├── sound.ts           # WebAudio blips, synthesised (no audio files)
-    │   └── util.ts            # clamp, formatAway, formatSeconds
+    │   └── util.ts            # clamp, formatCash, formatPrice, formatProb, formatAway
     ├── render                 # everything canvas, no DOM
     │   ├── draw.ts            # pixel primitives: px, pxa, outline, pxLine, dither, lightPool, noise2
-    │   ├── room.ts            # the Deep Hall: walls, door, banners, hearth, straw bed, grime
-    │   ├── warden.ts          # the character sprite, poses and equipped-look variants
-    │   ├── particles.ts       # pooled particle system (sparks, embers, suds, crumbs, Z's, coins)
-    │   └── dummy.ts           # the training pit and its battered dummy
+    │   ├── room.ts            # the trading hall: walls, shuttered window, banners, hearth, cot, grime
+    │   ├── warden.ts          # the character sprite, poses and equipped-rig variants
+    │   ├── particles.ts       # pooled particle system (sparks, embers, dust, Z's, coins)
+    │   └── terminal.ts        # the cathode terminal on the ticket desk
     ├── components             # reusable pixel UI
     │   ├── PixelPanel.tsx     # wooden/stone framed panel with rivets and a title ribbon
     │   ├── PixelBar.tsx       # RPG stat bar, quantised to 5% steps
     │   ├── PixelButton.tsx    # chunky bevelled button with icon + sublabel
     │   ├── ItemSlot.tsx       # inventory slot: owned / locked-with-chains / selected
     │   ├── PixelIcon.tsx      # the whole icon set, drawn as CSS box-shadow pixel matrices
-    │   ├── WardenPlinth.tsx   # the live sprite in a candle-lit alcove (regalia + service record)
+    │   ├── WardenPlinth.tsx   # the live sprite in a candle-lit alcove (rig screen + record)
+    │   ├── Toast.tsx          # the short result banner: fills, slips, hedges
     │   ├── Ribbon.tsx, ScreenHeader.tsx, CurrencyBar.tsx, SpeechBox.tsx,
     │   ├── Modal.tsx, FloatingTextLayer.tsx
     │   └── RoomCanvas.tsx     # the main-room stage: one canvas, one rAF loop, hotspot taps
-    ├── screens                # the eight screens
+    ├── screens                # the nine screens
     │   ├── BootScreen.tsx     # title, portrait, audio-unlock gesture
-    │   ├── RoomScreen.tsx     # the main loop: stage + need bars + action bar
-    │   ├── FeedScreen.tsx     # larder
-    │   ├── WardrobeScreen.tsx # regalia, with a live preview
-    │   ├── TrainScreen.tsx    # tap-the-dummy mini-game
-    │   ├── ShopScreen.tsx     # provisions + regalia
-    │   ├── ProfileScreen.tsx  # service record: name + rename, condition, keeper, regalia, tally
+    │   ├── RoomScreen.tsx     # the pit: stage + gauges + action bar
+    │   ├── ResearchScreen.tsx # notes & signals stash, plus the free read
+    │   ├── ScanScreen.tsx     # the board: six mock questions and their quotes
+    │   ├── BetScreen.tsx      # the ticket desk: side, size, preview, simulated fill
+    │   ├── RigScreen.tsx      # cosmetics, with a live preview
+    │   ├── ShopScreen.tsx     # supply: notes and rig
+    │   ├── ProfileScreen.tsx  # trading record: name + rename, form, the book, account, tally
     │   └── SettingsScreen.tsx # comforts, save, wipe save
     ├── telegram
     │   └── telegram.ts        # the entire Telegram surface, feature-detected (incl. CloudStorage)
@@ -324,17 +346,20 @@ immutable, so `useGame(selector)` re-renders only when something it reads
 changed. The 60fps canvases skip React entirely and call `getState()` once per
 frame.
 
-**Time.** `tick()` runs every second and derives decay from the wall-clock delta,
-so a backgrounded WebView catches up in one step instead of drifting. Decay
-pauses while he is asleep. Cooldowns and activity animations are wall-clock too;
-only the training mini-game uses `performance.now()`.
+**Time.** `tick()` runs every second and derives drift from the wall-clock delta,
+so a backgrounded WebView catches up in one step instead of drifting. Drift
+pauses while he is recovering. Cooldowns, quote staleness, the hedge window and
+the resolve beat are all wall-clock too.
 
-**Saving.** Every player gets their own warden. The `localStorage` key is
+**Saving.** Every player gets their own trader. The `localStorage` key is
 namespaced with the Telegram account id — `ktw.save.v1:<id>`, or `:guest` outside
 Telegram — and a save left behind by an older build under the un-namespaced key
 is adopted once, on first load. Local writes are debounced 500 ms and flushed on
-`pagehide` and on `visibilitychange → hidden`. The loader repairs corrupt or
-partial saves field by field rather than throwing them away.
+`pagehide` and on `visibilitychange → hidden`. Stats, bankroll, peak, credits,
+stash, rig, the last quoted board, the hedge window and last visit all persist.
+The loader repairs corrupt or partial saves field by field rather than throwing
+them away; a pre-2.0 care-sim save keeps his name, his rig and how long you have
+been at this, and starts the book fresh.
 
 The same save is mirrored into Telegram's `CloudStorage` (Bot API 6.9+) on a
 lazier 12 s debounce, so it follows the player to another device with no backend
@@ -346,11 +371,13 @@ screen, so a slow network can never yank the ground out from under someone who
 has already started playing.
 
 **Art.** No sprite sheets, no image files, no WebGL. Every scene is drawn with
-integer `fillRect` calls into a small canvas — the hall is 192×288 — which is
-then upscaled by a whole-number factor so every pixel stays a perfect square.
-Static geometry is rendered once into an offscreen canvas and blitted per frame;
-only fire, light flicker, the character and particles redraw. Light pools and
-vignettes are dithered rather than gradients, so nothing looks like CSS.
+integer `fillRect` calls into a small canvas — the hall is 192×208, the terminal
+160×176 — which is then upscaled by a whole-number factor so every pixel stays a
+perfect square. Static geometry is rendered once into an offscreen canvas and
+blitted per frame; only fire, light flicker, the character and particles redraw.
+Light pools and vignettes are dithered rather than gradients, so nothing looks
+like CSS. There are no charts: a quote is one chunky segmented bar quantised to
+5%, and the terminal is set dressing.
 
 **Sound.** Short square/triangle blips synthesised with WebAudio. The audio
 context is unlocked by the real tap on the boot screen's button, which keeps
@@ -362,16 +389,29 @@ mobile autoplay policies happy.
 
 | Verb | Effect |
 | --- | --- |
-| **Tap him** | +Mood, +Spirit, a sword flash and spirit sparks. Soft-capped per minute; sometimes shakes a Mark loose. |
-| **Feed** | Opens the larder. Each dish moves Hunger and a couple of other needs. |
-| **Wash** | +Clean, costs a little Energy. Also clears the grime that creeps into the room. |
-| **Sleep** | He shuffles to the straw mat. +Energy, and decay pauses while he is out. |
-| **Play** | Dice. +Mood, +3 Marks. |
-| **Train** | The pit: 15 seconds of tapping the dummy. Chained taps build a combo; pays Marks and Shards. |
+| **Tap him** | Check PnL. +Rep, +Focus, a flash and coin sparks. Soft-capped per minute; sometimes shakes a Credit loose. |
+| **Research** | Opens the stash. Notes and signals push Edge up and Focus down; with an empty stash there is a slow free read of the resolution rules. |
+| **Hedge** | −Heat, a little −Focus and −Rep, and $2 of simulated cost. Dampens the next fill in both directions. |
+| **Recover** | He lies down. +Focus, −Heat, and drift pauses while he is out. |
+| **Scan** | Re-quotes the whole board for 7 Focus. Quotes go stale after ten minutes and then fill worse. |
+| **Sim Bet** | The ticket desk: pick YES or NO, pick $10/$25/$50, watch it resolve after a beat. |
 
-Needs (Hunger, Energy, Mood, Clean, Spirit) decay at 3.5–8 points per hour, so a
-day away leaves him grumpy but alive. Marks buy provisions and regalia; Shards
-are the slower currency for the good pieces.
+**Gauges.** Edge, Focus, Heat and Rep, plus a derived Bankroll bar showing the
+book against its own high-water mark. Edge falls if he stops reading, Focus
+falls with use and with time, Heat climbs when he sizes things up and bleeds off
+when he rests, and Rep drifts down when nobody is around.
+
+**Fills.** Polymarket-style: the quote *is* the price of one share, so $25 at 40c
+buys 62.5 shares that pay $1 each if it resolves your way. A 2% fee comes off the
+stake. Edge tilts the real coin up to 8 points toward your side — it buys a few
+points, not certainty. Above Heat 60 fills start slipping against you, and a
+stale quote costs another 4c. A win pays the book and pushes Rep and a little
+Heat; a loss takes the stake, dents Focus and Rep and adds more Heat. Drop below
+$10 and the desk floats you $25 against your name, which costs Rep — the only
+thing here he seems to mind losing.
+
+**Currencies.** Bankroll moves only on fills, fees and hedges. Credits are the
+slower currency, shaken loose by showing up, and buy the good rig.
 
 ---
 
@@ -382,7 +422,10 @@ are the slower currency for the good pieces.
 - Every tap target is at least 34 px tall. The main action buttons are 58 px,
   dropping to 50/44 px on short viewports (landscape, small phones) — the row
   of four nav buttons never disappears, since it is the only guaranteed way
-  into the Market, the Regalia, the Record and the Keep. (The name tag on the
+  into Supply, the Rig, the Record and the Back Office. (The name tag on the
   stage opens the Record too, but it is hidden below 560 px of height.)
 - All copy is deliberately dry. If a line sounds like it is being nice to you,
   it is probably a bug.
+- Not investment advice, not a trading venue, not connected to Polymarket or any
+  other market. It is a toy book on a wooden desk.
+```
