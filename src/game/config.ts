@@ -13,8 +13,35 @@ import type { IconName } from '../components/PixelIcon'
    ========================================================================== */
 
 export const GAME_VERSION = '1.0.0'
-export const SAVE_KEY = 'ktw.save.v1'
-export const SAVE_VERSION = 3
+
+/**
+ * Save keys are namespaced per Telegram account, so two people sharing a
+ * device (or the same browser) get their own warden. `SAVE_KEY_LEGACY` is the
+ * flat key used before namespacing; it is adopted once, then left alone.
+ */
+export const SAVE_KEY_PREFIX = 'ktw.save.v1:'
+export const SAVE_KEY_LEGACY = 'ktw.save.v1'
+export const CLOUD_SAVE_KEY = 'ktw_save_v1'
+export const SAVE_VERSION = 4
+
+/** Longest name the player may give the warden. */
+export const NAME_MAX = 18
+
+/**
+ * Names are player-typed, so they are also drawn into the HUD and stored in the
+ * cloud. Keep letters (any alphabet), digits and the punctuation a name can
+ * legitimately contain; drop everything else. An empty result falls back to the
+ * default rather than leaving him nameless.
+ */
+export function sanitizeName(input: string): string {
+  const cleaned = input
+    .replace(/[^\p{L}\p{N} '\-.]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, NAME_MAX)
+    .trim()
+  return cleaned.length > 0 ? cleaned : WORLD.hero
+}
 
 /** Original world naming — no real-world or third-party references. */
 export const WORLD = {
@@ -415,6 +442,7 @@ export const TRAIN = {
 export function freshSave(now: number): SaveData {
   return {
     version: SAVE_VERSION,
+    name: WORLD.hero,
     needs: { hunger: 62, energy: 58, mood: 55, clean: 48, spirit: 70 },
     coins: 26,
     shards: 2,

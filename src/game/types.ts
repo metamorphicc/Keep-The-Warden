@@ -33,6 +33,7 @@ export type ScreenId =
   | 'wardrobe'
   | 'train'
   | 'shop'
+  | 'profile'
   | 'settings'
 
 /* ==========================================================================
@@ -95,6 +96,8 @@ export type EquippedLook = Record<EquipSlot, string | null>
 
 export interface SaveData {
   version: number
+  /** what the player calls him — renameable, defaults to WORLD.hero */
+  name: string
   needs: Needs
   coins: number
   shards: number

@@ -89,6 +89,16 @@
   color: var(--ember-lit);
 }
 
+/* Rows whose value is a word, not a number: let it clip instead of pushing
+   the label out of the row. */
+.detail__gains--text li b {
+  max-width: 58%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: normal;
+}
+
 .tally li {
   background: rgba(0, 0, 0, 0.22);
 }
@@ -345,13 +355,23 @@
   background: rgba(8, 5, 4, 0.82);
   border: 2px solid var(--ink);
   box-shadow: inset 0 2px 0 0 rgba(255, 235, 190, 0.09);
-  pointer-events: none;
+  text-align: left;
+  max-width: 58%;
   z-index: 4;
+}
+
+.room__hero-tag:active {
+  transform: translateY(1px);
+  background: rgba(30, 19, 12, 0.9);
 }
 
 .room__hero-tag .t-label {
   font-size: 8px;
   letter-spacing: 0.1em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .room__speech {
@@ -405,7 +425,7 @@
 
 .room__nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 5px;
 }
 
@@ -436,6 +456,13 @@
 .navbtn:active {
   transform: translateY(3px);
   box-shadow: inset 0 2px 0 0 rgba(255, 235, 190, 0.06);
+}
+
+.navbtn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ==========================================================================
@@ -475,6 +502,134 @@
   font-size: 8px;
   letter-spacing: 0.1em;
   line-height: 1.4;
+}
+
+/* ==========================================================================
+   SERVICE RECORD (profile)
+   ========================================================================== */
+
+.profile__hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0e0a07;
+}
+
+.profile__canvas,
+.plinth__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.profile__plate {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 8px 8px;
+  background-color: var(--wood-deep);
+  background-image: var(--tex-plank-dark);
+  border-top: var(--bd) solid var(--ink);
+  text-align: center;
+}
+
+.profile__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-title);
+  font-size: 15px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-shadow:
+    2px 2px 0 var(--ink),
+    3px 3px 0 rgba(0, 0, 0, 0.55);
+}
+
+.profile__plate .t-label {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
+}
+
+.profile__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 8px;
+}
+
+.profile__hint {
+  padding-bottom: 8px;
+  line-height: 1.5;
+  color: var(--bone-dim);
+}
+
+.profile__hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   Carved text field
+   -------------------------------------------------------------------------- */
+
+.field {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 9px;
+  background: #0d0906;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03) 0 2px,
+    rgba(0, 0, 0, 0) 2px 4px
+  );
+  border: var(--bd) solid var(--ink);
+  box-shadow:
+    inset 0 3px 0 0 rgba(0, 0, 0, 0.7),
+    inset 0 -2px 0 0 rgba(255, 235, 190, 0.05);
+  color: var(--gold-lit);
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 0 var(--ink);
+  outline: none;
+}
+
+.field:focus {
+  box-shadow:
+    inset 0 3px 0 0 rgba(0, 0, 0, 0.7),
+    inset 0 0 0 2px var(--gold-dark);
+}
+
+.field::placeholder {
+  color: var(--bone-deep);
+}
+
+.linkbtn {
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  color: var(--teal-lit);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.linkbtn:active {
+  color: var(--gold-lit);
 }
 
 /* ==========================================================================
@@ -637,7 +792,8 @@
 
 /* ==========================================================================
    Short screens: give the stage priority, shrink the chrome. The nav row
-   stays — it is the only way to reach the Market, the Regalia and the Keep.
+   stays — it is the only guaranteed way to reach the Market, the Regalia,
+   the Record and the Keep.
    ========================================================================== */
 
 @media (max-height: 700px) {

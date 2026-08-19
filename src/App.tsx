@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
-import { saveNow } from './game/actions'
+import { saveNow, syncFromCloud } from './game/actions'
 import { tick, useGame } from './game/store'
 import { BootScreen } from './screens/BootScreen'
 import { FeedScreen } from './screens/FeedScreen'
+import { ProfileScreen } from './screens/ProfileScreen'
 import { RoomScreen } from './screens/RoomScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
 import { ShopScreen } from './screens/ShopScreen'
@@ -18,9 +19,12 @@ export function App() {
   const screen = useGame((s) => s.screen)
   const reduceMotion = useGame((s) => s.settings.reduceMotion)
 
-  // Telegram handshake, once
+  // Telegram handshake, once. The cloud pull runs straight after it: the save
+  // is already loaded from localStorage by then, so this only ever upgrades to
+  // a newer copy stored against the player's account.
   useEffect(() => {
     initTelegram()
+    void syncFromCloud()
   }, [])
 
   // game clock: decay, activity expiry, cooldown countdowns
@@ -58,6 +62,7 @@ export function App() {
       {screen === 'wardrobe' ? <WardrobeScreen /> : null}
       {screen === 'train' ? <TrainScreen /> : null}
       {screen === 'shop' ? <ShopScreen /> : null}
+      {screen === 'profile' ? <ProfileScreen /> : null}
       {screen === 'settings' ? <SettingsScreen /> : null}
     </div>
   )

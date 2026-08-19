@@ -7,12 +7,12 @@ import { ScreenHeader } from '../components/ScreenHeader'
 import { resetGame, saveNow, setScreen, toggleSetting } from '../game/actions'
 import { GAME_VERSION, WORLD } from '../game/config'
 import { useGameState } from '../game/store'
-import { formatAway } from '../game/util'
 import { closeApp, isTelegram, telegramInfo } from '../telegram/telegram'
 import type { IconName } from '../components/PixelIcon'
 
 /* ==========================================================================
-   Keep — settings, tally, and the one destructive button.
+   Keep — settings, the way into the service record, and the one destructive
+   button.
    ========================================================================== */
 
 const TOGGLES: { key: 'sound' | 'haptics' | 'reduceMotion'; label: string; icon: IconName; note: string }[] =
@@ -31,7 +31,6 @@ export function SettingsScreen() {
   const s = useGameState()
   const [confirming, setConfirming] = useState(false)
   const tg = telegramInfo()
-  const daysHeld = Math.max(1, Math.floor((Date.now() - s.firstVisit) / 86_400_000) + 1)
 
   return (
     <div className="screen">
@@ -65,25 +64,17 @@ export function SettingsScreen() {
           </ul>
         </PixelPanel>
 
-        <PixelPanel variant="wood" title="Tally" titleIcon="star" pad="md" rivets>
-          <ul className="detail__gains tally">
-            <Row label="Days on post" value={daysHeld} icon="torch" />
-            <Row label="Times greeted" value={s.stats.pets} icon="star" />
-            <Row label="Meals served" value={s.stats.meals} icon="stew" />
-            <Row label="Naps taken" value={s.stats.naps} icon="bed" />
-            <Row label="Armour scrubbed" value={s.stats.washes} icon="brush" />
-            <Row label="Rounds trained" value={s.stats.trains} icon="dummy" />
-            <Row label="Longest chain" value={s.stats.bestCombo} icon="sword" />
-            <Row label="Visits" value={s.visits} icon="check" />
-          </ul>
-          <p className="t-label t-dim">
-            Last seen {s.awayMs > 60_000 ? `${formatAway(s.awayMs)} ago` : 'just now'}. Progress
-            saves itself.
-          </p>
-        </PixelPanel>
-
         <PixelPanel variant="ink" title="Hall" titleIcon="torch" pad="md" rivets>
           <div className="stack">
+            <PixelButton
+              label="Service record"
+              icon="warden"
+              variant="wood"
+              size="sm"
+              full
+              sublabel="Name, condition, tally"
+              onClick={() => setScreen('profile')}
+            />
             <PixelButton
               label="Save now"
               icon="check"
@@ -148,15 +139,5 @@ export function SettingsScreen() {
         arguably a mercy.
       </Modal>
     </div>
-  )
-}
-
-function Row({ label, value, icon }: { label: string; value: number; icon: IconName }) {
-  return (
-    <li>
-      <PixelIcon name={icon} size={12} />
-      <span>{label}</span>
-      <b>{value}</b>
-    </li>
   )
 }

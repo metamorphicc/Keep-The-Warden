@@ -37,12 +37,17 @@ export function RoomScreen() {
         <RoomCanvas />
         <FloatingTextLayer />
 
-        <div className="room__hero-tag">
-          <span className="t-label t-gold">{WORLD.hero}</span>
+        <button
+          type="button"
+          className="room__hero-tag"
+          onClick={() => setScreen('profile')}
+          aria-label="Open the service record"
+        >
+          <span className="t-label t-gold">{s.name}</span>
           <span className="t-label t-dim">
             {mood >= 70 ? 'Holding the line' : mood >= 40 ? 'Managing' : 'Barely'}
           </span>
-        </div>
+        </button>
 
         <div className="room__speech">
           <SpeechBox text={s.line || statusLine(s.needs)} animKey={s.lineId} />
@@ -101,6 +106,10 @@ export function RoomScreen() {
           <button type="button" className="navbtn" onClick={() => setScreen('wardrobe')}>
             <PixelIcon name="helm" size={14} />
             <span>Regalia</span>
+          </button>
+          <button type="button" className="navbtn" onClick={() => setScreen('profile')}>
+            <PixelIcon name="warden" size={14} />
+            <span>Record</span>
           </button>
           <button type="button" className="navbtn" onClick={() => setScreen('settings')}>
             <PixelIcon name="gear" size={14} />

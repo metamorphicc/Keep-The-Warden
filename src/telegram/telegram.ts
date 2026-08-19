@@ -47,6 +47,12 @@ interface TelegramWebApp {
     notificationOccurred: (type: HapticNotification) => void
     selectionChanged: () => void
   }
+  /** Per-account key/value store, Bot API 6.9+. Values are capped at 4096 chars. */
+  CloudStorage?: {
+    setItem: (key: string, value: string, cb?: (err: string | null, ok?: boolean) => void) => void
+    getItem: (key: string, cb: (err: string | null, value?: string) => void) => void
+    removeItem: (key: string, cb?: (err: string | null, ok?: boolean) => void) => void
+  }
 }
 
 declare global {
@@ -63,6 +69,16 @@ export const isTelegram = (): boolean => Boolean(wa()?.initData !== undefined &&
 
 export function tgUserName(): string | null {
   return wa()?.initDataUnsafe?.user?.first_name ?? null
+}
+
+/** Numeric Telegram account id, or null outside Telegram. Namespaces the save. */
+export function tgUserId(): number | null {
+  const id = wa()?.initDataUnsafe?.user?.id
+  return typeof id === 'number' && Number.isFinite(id) ? id : null
+}
+
+export function tgUsername(): string | null {
+  return wa()?.initDataUnsafe?.user?.username ?? null
 }
 
 /** Compare "7.7" style versions. */
@@ -217,4 +233,71 @@ export function telegramInfo(): { platform: string; version: string } | null {
   const app = wa()
   if (!app) return null
   return { platform: app.platform, version: app.version }
+}
+
+/* --------------------------------------------------------------------------
+   CloudStorage — Bot API 6.9+. A key/value store tied to the player's Telegram
+   account, so progress follows them to another device with no backend of ours.
+   Promise wrappers; every one of them resolves rather than rejects, because a
+   failed sync must never break the game.
+   -------------------------------------------------------------------------- */
+
+function cloud(): TelegramWebApp['CloudStorage'] | undefined {
+  if (!versionAtLeast('6.9')) return undefined
+  return wa()?.CloudStorage
+}
+
+export function cloudAvailable(): boolean {
+  return Boolean(cloud())
+}
+
+/** Resolves to the stored string, or null if missing / unsupported / errored. */
+export function cloudGet(key: string): Promise<string | null> {
+  const cs = cloud()
+  if (!cs) return Promise.resolve(null)
+  return new Promise((resolve) => {
+    let settled = false
+    const done = (v: string | null) => {
+      if (settled) return
+      settled = true
+      resolve(v)
+    }
+    // Some clients simply never call back. Do not hang the boot on it.
+    const timer = window.setTimeout(() => done(null), 4000)
+    try {
+      cs.getItem(key, (err, value) => {
+        window.clearTimeout(timer)
+        done(err || !value ? null : value)
+      })
+    } catch {
+      window.clearTimeout(timer)
+      done(null)
+    }
+  })
+}
+
+/** Resolves true if the value was stored. */
+export function cloudSet(key: string, value: string): Promise<boolean> {
+  const cs = cloud()
+  // The documented ceiling is 4096 characters per value.
+  if (!cs || value.length > 4096) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    try {
+      cs.setItem(key, value, (err, ok) => resolve(!err && ok !== false))
+    } catch {
+      resolve(false)
+    }
+  })
+}
+
+export function cloudRemove(key: string): Promise<boolean> {
+  const cs = cloud()
+  if (!cs) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    try {
+      cs.removeItem(key, (err, ok) => resolve(!err && ok !== false))
+    } catch {
+      resolve(false)
+    }
+  })
 }

@@ -7,13 +7,20 @@ import {
   PET,
   TRAIN,
   WORLD,
+  sanitizeName,
 } from './config'
 import { COPY } from './copy'
 import { burst, emitFx, floatText } from './fx'
-import { clearSave, flushSave } from './persistence'
+import {
+  clearSave,
+  flushSave,
+  pullCloudSave,
+  releaseCloudWrites,
+} from './persistence'
 import { play } from './sound'
 import {
   addNeeds,
+  adoptSave,
   getSaveSlice,
   getState,
   resetState,
@@ -412,6 +419,29 @@ export function finishTraining(hits: number, bestCombo: number): ActionResult {
 }
 
 /* ==========================================================================
+   Identity
+   ========================================================================== */
+
+/**
+ * Renames the warden. Returns the name that was actually stored — the input is
+ * sanitised, so it may come back trimmed, stripped or replaced by the default.
+ */
+export function renameWarden(input: string): string {
+  const name = sanitizeName(input)
+  const previous = getState().name
+  setState({ name })
+  play(name === previous ? 'click' : 'fanfare')
+  buzz('medium')
+  if (name === previous) return name
+  say(
+    name === WORLD.hero
+      ? 'Back to the name on the roster, then.'
+      : `He tries it out under his breath. "${name}." It will do.`,
+  )
+  return name
+}
+
+/* ==========================================================================
    Settings
    ========================================================================== */
 
@@ -430,6 +460,25 @@ export function resetGame(): void {
 
 export function saveNow(): void {
   flushSave(getSaveSlice())
+}
+
+/**
+ * Boot-time sync: if this Telegram account has newer progress stored against it
+ * (another device, or a reinstall), adopt it. Runs once, and only takes effect
+ * while the player is still on the title screen — a late answer must never yank
+ * the state out from under someone who is already playing.
+ */
+export async function syncFromCloud(): Promise<void> {
+  try {
+    const result = await pullCloudSave(Date.now())
+    if (result && getState().screen === 'boot') {
+      adoptSave(result.save, result.awayMs)
+    }
+  } catch {
+    /* offline, unsupported client, malformed payload — local save stands */
+  } finally {
+    releaseCloudWrites()
+  }
 }
 
 /* ==========================================================================

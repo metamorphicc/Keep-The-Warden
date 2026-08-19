@@ -40,6 +40,7 @@ export function subscribe(listener: () => void): () => void {
 function saveSlice(): SaveData {
   return {
     version: state.version,
+    name: state.name,
     needs: state.needs,
     coins: state.coins,
     shards: state.shards,
@@ -66,6 +67,17 @@ export function setState(
 /** Replaces the whole state (used by "reset save"). */
 export function resetState(): void {
   state = { ...createInitialState(), screen: 'room' }
+  for (const l of listeners) l()
+  scheduleSave(saveSlice)
+}
+
+/**
+ * Swaps in a save that came from somewhere else — currently Telegram's
+ * CloudStorage, i.e. this account's progress on another device. Only the
+ * persisted half is replaced; the current screen and animation state stay.
+ */
+export function adoptSave(save: SaveData, awayMs: number): void {
+  state = { ...state, ...save, awayMs }
   for (const l of listeners) l()
   scheduleSave(saveSlice)
 }
