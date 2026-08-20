@@ -531,34 +531,34 @@ export const RIGS: RigDef[] = [
     currency: 'credits',
     desc: 'Smoulders faintly. He calls that a feature.',
   },
-  // ---- probes ----
+  // ---- desk tools ----
   {
     id: 'blade_steel',
-    name: 'Cheap Styluses',
+    name: 'Old Keyboard',
     slot: 'blade',
     icon: 'sword',
     price: 0,
     currency: 'bankroll',
-    desc: 'Plastic tips, cracked cable, still better than guessing.',
+    desc: 'Sticky keys, taped cable, still better than guessing.',
     starter: true,
   },
   {
     id: 'blade_spirit',
-    name: 'Signal Probes',
+    name: 'Chart Pad',
     slot: 'blade',
     icon: 'swordBlue',
     price: 70,
     currency: 'bankroll',
-    desc: 'Hum in the dark. Louder when the thesis is thin.',
+    desc: 'A small screen for sketches, signals, and bad ideas made visible.',
   },
   {
     id: 'blade_ember',
-    name: 'Hot-Hand Probes',
+    name: 'Risk Tablet',
     slot: 'blade',
     icon: 'swordRed',
     price: 4,
     currency: 'credits',
-    desc: 'Warm to hold. Warmer after the third martingale.',
+    desc: 'Warm to touch. Warmer after the third martingale.',
   },
 ]
 
@@ -567,7 +567,7 @@ export const RIG_BY_ID: Record<string, RigDef> = Object.fromEntries(RIGS.map((r)
 export const SLOT_LABEL: Record<'head' | 'cloak' | 'blade', string> = {
   head: 'Headset',
   cloak: 'Coat',
-  blade: 'Probes',
+  blade: 'Tools',
 }
 
 /* ==========================================================================
