@@ -65,7 +65,7 @@ function basePose(): Pose {
     armR: { x: 8, y: 14 },
     swordL: 118 * D,
     swordR: 62 * D,
-    swordLen: 22,
+    swordLen: 18,
     bladesUp: false,
     capeSway: 0,
     aura: 0.5,
@@ -159,7 +159,7 @@ export function poseFor({ activity, phase, t, stats }: PoseInput): Pose {
       p.headTilt = -2 * p.sit
       p.armL = { x: -7, y: 16 }
       p.armR = { x: 7, y: 16 }
-      p.swordLen = p.sit > 0.5 ? 0 : 22
+      p.swordLen = p.sit > 0.5 ? 0 : 18
       p.bob = Math.sin(t / 700) > 0 ? 0 : 1
       p.aura = Math.max(0.1, p.aura * 0.55)
       break
@@ -254,7 +254,7 @@ function kitFor(look: EquippedLook): Kit {
         : cloakId === 'cloak_ember'
           ? { dark: P.emberDeep, mid: P.ember, lit: P.emberLit, ragged: false, fur: false }
           : cloakId === 'cloak_rag'
-            ? { dark: '#2a211a', mid: '#3d3026', lit: '#4f3f31', ragged: true, fur: false }
+            ? { dark: '#1d2935', mid: '#2e3d4c', lit: '#4d6072', ragged: false, fur: false }
             : { dark: '#241d18', mid: '#2e251d', lit: '#3a2e24', ragged: true, fur: false }
 
   const bladeId = look.blade
@@ -283,52 +283,42 @@ function kitFor(look: EquippedLook): Kit {
    -------------------------------------------------------------------------- */
 
 function drawCape(ctx: Ctx, cx: number, groundY: number, pose: Pose, kit: Kit): void {
-  const top = groundY - 46 + pose.bob + Math.round(pose.sit * 12)
-  const bottom = groundY - 4 - Math.round(pose.sit * 10)
+  const top = groundY - 44 + pose.bob + Math.round(pose.sit * 12)
+  const bottom = groundY - 18 - Math.round(pose.sit * 7)
   const sway = pose.capeSway + pose.lean * -0.6
-  const { dark, mid, lit, ragged, fur } = kit.cloak
+  const { dark, mid, lit, fur } = kit.cloak
 
+  // hoodie back, visible behind the torso
   for (let y = top; y < bottom; y++) {
     const k = (y - top) / Math.max(1, bottom - top)
-    const halfW = 9 + k * 5
-    const off = Math.round(sway * k * 2)
+    const halfW = 10 + k * 3
+    const off = Math.round(sway * k)
     const x0 = cx - halfW + off
     const w = halfW * 2
     px(ctx, x0, y, w, 1, k < 0.18 ? lit : k < 0.6 ? mid : dark)
-    // inner shadow where the body blocks the light
-    px(ctx, cx - 5 + off, y, 10, 1, dark)
     if (fur && y % 3 === 0) {
       px(ctx, x0 - 1, y, 2, 1, lit)
       px(ctx, x0 + w - 1, y, 2, 1, lit)
     }
   }
-  // ragged hem
-  if (ragged) {
-    for (let i = 0; i < 7; i++) {
-      const n = noise2(i, 3)
-      if (n > 0.45) {
-        const w = 3
-        px(ctx, cx - 12 + i * 4 + Math.round(sway * 2), bottom, w, 1 + Math.floor(n * 3), dark)
-      }
-    }
-  } else {
-    px(ctx, cx - 14 + Math.round(sway * 2), bottom, 28, 2, dark)
-  }
-  // clasp
-  px(ctx, cx - 8, top + 1, 16, 2, P.goldDark)
-  px(ctx, cx - 2, top, 4, 3, P.gold)
+
+  // hood folded around the neck
+  px(ctx, cx - 10 + pose.lean, top - 2, 20, 7, dark)
+  px(ctx, cx - 7 + pose.lean, top - 1, 14, 3, lit)
+  px(ctx, cx - 5 + pose.lean, top + 2, 10, 2, P.ink)
+  px(ctx, cx - 11 + Math.round(sway), bottom, 22, 2, dark)
 }
 
 function drawLegs(ctx: Ctx, cx: number, groundY: number, pose: Pose): void {
   if (pose.sit > 0.5) {
-    // folded, sitting on the straw
+    // folded, asleep in the chair
     const y = groundY - 8
-    px(ctx, cx - 14, y, 12, 6, P.plateDark)
-    px(ctx, cx + 2, y, 12, 6, P.plateDark)
-    px(ctx, cx - 14, y, 12, 2, P.plate)
-    px(ctx, cx + 2, y, 12, 2, P.plate)
-    px(ctx, cx - 16, y + 2, 4, 4, P.woodDark)
-    px(ctx, cx + 12, y + 2, 4, 4, P.woodDark)
+    px(ctx, cx - 14, y, 12, 6, '#26364a')
+    px(ctx, cx + 2, y, 12, 6, '#26364a')
+    px(ctx, cx - 14, y, 12, 2, '#3c4d62')
+    px(ctx, cx + 2, y, 12, 2, '#3c4d62')
+    px(ctx, cx - 16, y + 2, 5, 4, P.boneDim)
+    px(ctx, cx + 12, y + 2, 5, 4, P.boneDim)
     return
   }
 
@@ -336,18 +326,16 @@ function drawLegs(ctx: Ctx, cx: number, groundY: number, pose: Pose): void {
   for (const side of [-1, 1] as const) {
     const lx = cx + (side < 0 ? -9 : 1)
     const lift = pose.step && side < 0 ? stepOff : 0
-    // greave
-    px(ctx, lx, groundY - 19 - lift, 8, 12, P.plateDark)
-    px(ctx, lx, groundY - 19 - lift, 8, 2, P.plate)
-    px(ctx, lx + (side < 0 ? 0 : 7), groundY - 19 - lift, 1, 12, P.plateLit)
-    // knee trim
-    px(ctx, lx, groundY - 14 - lift, 8, 2, P.goldDark)
-    px(ctx, lx + 2, groundY - 14 - lift, 4, 1, P.gold)
-    // boot
-    px(ctx, lx - 1, groundY - 8 - lift, 10, 8, P.woodDeep)
-    px(ctx, lx - 1, groundY - 8 - lift, 10, 2, P.woodDark)
+    // jeans
+    px(ctx, lx, groundY - 21 - lift, 8, 14, '#203049')
+    px(ctx, lx, groundY - 21 - lift, 8, 2, '#3b516d')
+    px(ctx, lx + (side < 0 ? 0 : 7), groundY - 21 - lift, 1, 14, '#111b29')
+    px(ctx, lx + 3, groundY - 15 - lift, 2, 8, '#172438')
+    // socks / house shoes
+    px(ctx, lx - 1, groundY - 8 - lift, 10, 8, P.boneDim)
+    px(ctx, lx - 1, groundY - 8 - lift, 10, 2, P.bone)
     px(ctx, lx - 1, groundY - 2 - lift, 10, 2, P.ink)
-    px(ctx, lx, groundY - 6 - lift, 2, 4, '#3a2a1c')
+    px(ctx, lx + 1, groundY - 5 - lift, 3, 2, P.tealDeep)
   }
 }
 
@@ -356,48 +344,42 @@ function drawTorso(ctx: Ctx, cx: number, groundY: number, pose: Pose, kit: Kit):
   const drop = Math.round(pose.sit * 12)
   const top = groundY - 44 + pose.bob + drop
   const waist = groundY - 29 + drop
+  const { dark, mid, lit } = kit.cloak
 
-  // armoured skirt
-  px(ctx, cx - 12, waist - 1, 24, 12 - Math.round(pose.sit * 4), P.plateDeep)
-  for (let i = 0; i < 6; i++) {
-    px(ctx, cx - 12 + i * 4, waist, 3, 10 - Math.round(pose.sit * 4), i % 2 ? P.plateDark : P.plateDeep)
-  }
-  px(ctx, cx - 12, waist - 1, 24, 2, P.plate)
+  // hoodie body
+  px(ctx, cx - 11 + lean, top, 22, waist - top + 12 - Math.round(pose.sit * 4), mid)
+  px(ctx, cx - 11 + lean, top, 22, 2, lit)
+  px(ctx, cx - 11 + lean, top, 2, waist - top + 10, lit)
+  px(ctx, cx + 9 + lean, top, 2, waist - top + 10, dark)
+  px(ctx, cx - 11 + lean, waist + 8, 22, 3, dark)
 
-  // belt
-  px(ctx, cx - 11 + lean, waist - 4, 22, 4, P.woodDark)
-  px(ctx, cx - 11 + lean, waist - 4, 22, 1, P.wood)
-  px(ctx, cx - 3 + lean, waist - 5, 6, 6, P.goldDark)
-  px(ctx, cx - 2 + lean, waist - 4, 4, 4, P.gold)
+  // tee peeking through the unzipped hoodie
+  px(ctx, cx - 5 + lean, top + 5, 10, 18 - Math.round(pose.sit * 4), '#d7dccf')
+  px(ctx, cx - 5 + lean, top + 5, 10, 1, P.white)
+  px(ctx, cx - 1 + lean, top + 7, 2, 17, kit.blade.glow ?? P.spirit)
 
-  // chest plate
-  px(ctx, cx - 10 + lean, top, 20, waist - top - 3, P.plateDark)
-  px(ctx, cx - 10 + lean, top, 20, 2, P.plate)
-  px(ctx, cx - 10 + lean, top, 2, waist - top - 3, P.plate)
-  px(ctx, cx + 8 + lean, top, 2, waist - top - 3, P.plateDeep)
-  // gold trim down the middle
-  px(ctx, cx - 1 + lean, top + 2, 2, waist - top - 6, P.goldDark)
-  // collar
-  px(ctx, cx - 8 + lean, top - 1, 16, 2, P.goldDark)
-  px(ctx, cx - 5 + lean, top - 1, 10, 1, P.gold)
+  // zipper and hoodie strings
+  px(ctx, cx - 1 + lean, top + 3, 2, waist - top + 8, P.ink)
+  pxLine(ctx, cx - 4 + lean, top + 3, cx - 7 + lean, top + 15, P.boneDim, 1)
+  pxLine(ctx, cx + 4 + lean, top + 3, cx + 7 + lean, top + 15, P.boneDim, 1)
+  px(ctx, cx - 7 + lean, top + 15, 2, 2, P.bone)
+  px(ctx, cx + 6 + lean, top + 15, 2, 2, P.bone)
 
-  // spirit rune on the chest
+  // edge signal on the shirt
   const runeY = top + 5
   const glow = pose.aura
-  pxa(ctx, cx - 4 + lean, runeY - 1, 8, 8, P.spirit, 0.18 * glow)
-  px(ctx, cx - 1 + lean, runeY, 2, 6, kit.blade.glow ?? P.spirit)
-  px(ctx, cx - 4 + lean, runeY + 2, 8, 2, kit.blade.glow ?? P.spirit)
+  pxa(ctx, cx - 4 + lean, runeY - 1, 8, 8, P.spirit, 0.12 * glow)
+  px(ctx, cx - 4 + lean, runeY + 5, 8, 1, kit.blade.glow ?? P.spirit)
+  px(ctx, cx - 2 + lean, runeY + 3, 2, 2, kit.blade.glow ?? P.spirit)
+  px(ctx, cx + 2 + lean, runeY + 1, 2, 4, kit.blade.glow ?? P.spirit)
   pxa(ctx, cx - 1 + lean, runeY + 1, 2, 2, P.spiritPale, 0.9 * glow)
 
-  // pauldrons
+  // soft shoulders
   for (const side of [-1, 1] as const) {
     const sx = side < 0 ? cx - 17 + lean : cx + 9 + lean
-    px(ctx, sx, top - 2, 8, 7, P.plateDark)
-    px(ctx, sx, top - 2, 8, 2, P.plateLit)
-    px(ctx, sx, top + 4, 8, 2, P.goldDark)
-    px(ctx, sx + (side < 0 ? 0 : 6), top - 1, 2, 6, P.plate)
-    // spike
-    px(ctx, sx + (side < 0 ? 0 : 6), top - 4, 2, 3, P.stoneHi)
+    px(ctx, sx, top - 1, 8, 6, mid)
+    px(ctx, sx, top - 1, 8, 2, lit)
+    px(ctx, sx + (side < 0 ? 0 : 6), top, 2, 6, dark)
   }
 }
 
@@ -411,16 +393,14 @@ function drawArm(
   const hy = shoulderY + hand.y
   const ex = shoulderX + Math.round(hand.x * 0.62)
   const ey = shoulderY + Math.round(hand.y * 0.55)
-  // upper arm + forearm
-  pxLine(ctx, shoulderX, shoulderY, ex, ey, P.plateDark, 4)
-  pxLine(ctx, ex, ey, hx, hy, P.plateDark, 3)
-  pxLine(ctx, shoulderX, shoulderY, ex, ey, P.plate, 2)
-  // elbow guard
-  px(ctx, ex - 2, ey - 1, 4, 3, P.goldDark)
-  // gauntlet
-  px(ctx, hx - 2, hy - 2, 5, 5, P.plate)
-  px(ctx, hx - 2, hy - 2, 5, 1, P.plateLit)
-  px(ctx, hx - 2, hy + 2, 5, 1, P.ink)
+  // hoodie sleeve + hand
+  pxLine(ctx, shoulderX, shoulderY, ex, ey, '#263646', 4)
+  pxLine(ctx, ex, ey, hx, hy, '#263646', 3)
+  pxLine(ctx, shoulderX, shoulderY, ex, ey, '#4d6072', 2)
+  px(ctx, ex - 2, ey - 1, 4, 3, '#1d2935')
+  px(ctx, hx - 2, hy - 2, 5, 5, P.skin)
+  px(ctx, hx - 2, hy - 2, 5, 1, P.skinLit)
+  px(ctx, hx - 2, hy + 2, 5, 1, P.skinShade)
   return { hx, hy }
 }
 
@@ -475,37 +455,37 @@ function drawHead(ctx: Ctx, cx: number, groundY: number, pose: Pose, kit: Kit): 
   const tilt = pose.headTilt
   const top = groundY - 60 + pose.bob + drop
   const hx = cx + tilt + Math.round(pose.lean * 0.5)
+  const hair = '#241812'
+  const hairLit = '#3a271c'
 
-  // neck
-  px(ctx, cx - 4 + pose.lean, top + 12, 8, 4, P.skinShade)
+  px(ctx, cx - 4 + pose.lean, top + 13, 8, 4, P.skinShade)
 
-  // skull + face
-  px(ctx, hx - 7, top + 1, 14, 13, P.skin)
-  px(ctx, hx - 7, top + 1, 14, 2, P.skinLit)
-  px(ctx, hx - 7, top + 1, 2, 12, P.skinLit)
-  px(ctx, hx + 5, top + 2, 2, 12, P.skinShade)
-  // temples / crow's feet
-  px(ctx, hx - 6, top + 6, 2, 1, P.skinShade)
-  px(ctx, hx + 4, top + 6, 2, 1, P.skinShade)
+  // face
+  px(ctx, hx - 7, top + 3, 14, 12, P.skin)
+  px(ctx, hx - 7, top + 3, 14, 2, P.skinLit)
+  px(ctx, hx - 7, top + 3, 2, 11, P.skinLit)
+  px(ctx, hx + 5, top + 4, 2, 11, P.skinShade)
 
-  // white hair at the back and sides
-  px(ctx, hx - 8, top, 16, 3, P.boneDim)
-  px(ctx, hx - 8, top, 16, 1, P.bone)
-  px(ctx, hx - 9, top + 2, 2, 6, P.boneDim)
-  px(ctx, hx + 7, top + 2, 2, 6, P.boneDim)
-
-  // heavy brows
-  const browY = top + 5
-  px(ctx, hx - 6, browY, 5, 2, P.bone)
-  px(ctx, hx + 1, browY, 5, 2, P.bone)
-  if (pose.eyes === 'angry') {
-    px(ctx, hx - 6, browY + 1, 5, 1, P.boneDim)
-    px(ctx, hx - 2, browY + 2, 2, 1, P.bone)
-    px(ctx, hx, browY + 2, 2, 1, P.bone)
+  // messy dark hair
+  px(ctx, hx - 8, top, 16, 5, hair)
+  px(ctx, hx - 7, top, 12, 1, hairLit)
+  px(ctx, hx - 9, top + 3, 3, 6, hair)
+  px(ctx, hx + 6, top + 3, 3, 5, hair)
+  for (let i = 0; i < 5; i++) {
+    const sx = hx - 7 + i * 3
+    const h = 2 + Math.floor(noise2(i, top) * 4)
+    px(ctx, sx, top - h + 2, 2, h, i % 2 ? hair : hairLit)
   }
 
-  // eyes
-  const eyeY = top + 7
+  const browY = top + 6
+  px(ctx, hx - 6, browY, 5, 1, hair)
+  px(ctx, hx + 1, browY, 5, 1, hair)
+  if (pose.eyes === 'angry') {
+    px(ctx, hx - 6, browY + 1, 5, 1, hair)
+    px(ctx, hx + 1, browY + 1, 5, 1, hair)
+  }
+
+  const eyeY = top + 8
   const drawEye = (ox: number) => {
     switch (pose.eyes) {
       case 'closed':
@@ -526,93 +506,69 @@ function drawHead(ctx: Ctx, cx: number, groundY: number, pose: Pose, kit: Kit): 
       default:
         px(ctx, hx + ox, eyeY, 3, 2, P.bone)
         px(ctx, hx + ox + 1, eyeY, 1, 2, P.ink)
-        // faint spirit shine in the pupil
         pxa(ctx, hx + ox + 1, eyeY, 1, 1, P.spiritLit, 0.5)
     }
   }
   drawEye(-5)
   drawEye(3)
 
-  // nose
   px(ctx, hx - 1, eyeY + 2, 2, 3, P.skinShade)
   px(ctx, hx - 1, eyeY + 4, 3, 1, P.skinShade)
 
-  // scar across the left brow
-  px(ctx, hx - 6, top + 3, 1, 4, P.skinShade)
+  if (pose.mouth === 'open') px(ctx, hx - 2, top + 15, 4, 2, '#3a1f16')
+  else if (pose.mouth === 'grin') px(ctx, hx - 3, top + 15, 6, 1, '#3a1f16')
+  else px(ctx, hx - 3, top + 15, 6, 1, P.skinShade)
 
-  // moustache + beard
-  const beardTop = top + 11
-  px(ctx, hx - 6, beardTop - 1, 12, 3, P.bone)
-  const beardBottom = beardTop + 18 - Math.round(pose.sit * 4)
-  for (let y = beardTop + 2; y < beardBottom; y++) {
-    const k = (y - beardTop) / (beardBottom - beardTop)
-    const halfW = Math.max(2, Math.round(7 - k * 4))
-    const wob = Math.round(Math.sin(y * 1.7) * 0.6)
-    px(ctx, hx - halfW + wob, y, halfW * 2, 1, k > 0.55 ? P.boneDim : P.bone)
-    px(ctx, hx - halfW + wob, y, 1, 1, P.bone)
-    if (y % 5 === 0) px(ctx, hx - halfW + 2 + wob, y, halfW, 1, P.boneDeep)
+  if (pose.eyes === 'tired') {
+    pxa(ctx, hx - 6, eyeY + 3, 4, 1, P.spiritDeep, 0.32)
+    pxa(ctx, hx + 2, eyeY + 3, 4, 1, P.spiritDeep, 0.32)
   }
-  // mouth peeking through the moustache
-  if (pose.mouth === 'open') px(ctx, hx - 2, beardTop + 2, 4, 2, '#3a1f16')
-  else if (pose.mouth === 'grin') px(ctx, hx - 3, beardTop + 2, 6, 1, '#3a1f16')
 
-  // headgear
   switch (kit.head) {
     case 'circlet':
-      px(ctx, hx - 8, top + 1, 16, 3, P.plateDark)
-      px(ctx, hx - 8, top + 1, 16, 1, P.plateLit)
-      px(ctx, hx - 2, top, 4, 4, P.plate)
-      px(ctx, hx - 1, top + 1, 2, 2, P.spiritLit)
+      px(ctx, hx - 8, top + 4, 16, 3, P.plateDark)
+      px(ctx, hx - 8, top + 4, 16, 1, P.plateLit)
+      px(ctx, hx - 5, top + 5, 10, 1, P.spiritLit)
       break
     case 'antler':
-      px(ctx, hx - 8, top, 16, 4, P.plateDark)
-      px(ctx, hx - 8, top, 16, 1, P.plateLit)
-      pxLine(ctx, hx - 7, top, hx - 11, top - 8, P.boneDim, 2)
-      pxLine(ctx, hx - 11, top - 8, hx - 14, top - 6, P.boneDim, 1)
-      pxLine(ctx, hx - 10, top - 5, hx - 13, top - 3, P.boneDim, 1)
-      pxLine(ctx, hx + 7, top, hx + 11, top - 8, P.boneDim, 2)
-      pxLine(ctx, hx + 11, top - 8, hx + 14, top - 6, P.boneDim, 1)
-      pxLine(ctx, hx + 10, top - 5, hx + 13, top - 3, P.boneDim, 1)
+      px(ctx, hx - 9, top + 5, 3, 9, P.plateDark)
+      px(ctx, hx + 6, top + 5, 3, 9, P.plateDark)
+      pxLine(ctx, hx - 7, top + 5, hx - 3, top + 2, P.plateLit, 1)
+      pxLine(ctx, hx + 7, top + 5, hx + 3, top + 2, P.plateLit, 1)
+      pxLine(ctx, hx + 7, top + 3, hx + 12, top - 4, P.tealLit, 1)
+      px(ctx, hx + 11, top - 5, 2, 2, P.spiritPale)
       break
     case 'crown':
-      px(ctx, hx - 8, top, 16, 4, P.gold)
-      px(ctx, hx - 8, top + 3, 16, 1, P.goldDark)
-      for (let i = 0; i < 4; i++) {
-        px(ctx, hx - 7 + i * 5, top - 3, 2, 3, P.goldLit)
-      }
-      px(ctx, hx - 1, top + 1, 3, 2, P.blood)
+      px(ctx, hx - 8, top + 1, 16, 5, P.gold)
+      px(ctx, hx - 8, top + 5, 16, 1, P.goldDark)
+      px(ctx, hx + 4, top + 3, 7, 2, P.goldLit)
+      px(ctx, hx - 2, top + 2, 4, 2, P.blood)
       break
     default:
-      // bald crown with a few stubborn strands
-      px(ctx, hx - 5, top, 10, 2, P.boneDim)
-      px(ctx, hx - 2, top - 1, 2, 2, P.bone)
       break
   }
 
-  // grime on the face
   if (pose.dirt > 0) {
-    pxa(ctx, hx + 2, top + 9, 3, 2, '#4a3520', 0.6)
-    if (pose.dirt > 1) pxa(ctx, hx - 6, top + 8, 3, 2, '#4a3520', 0.55)
+    pxa(ctx, hx + 2, top + 10, 3, 2, '#4a3520', 0.45)
+    if (pose.dirt > 1) pxa(ctx, hx - 6, top + 9, 3, 2, '#4a3520', 0.45)
   }
 }
 
 function drawProp(ctx: Ctx, hx: number, hy: number, pose: Pose): void {
   switch (pose.prop) {
     case 'ledger':
-      // a small open book: bone pages, a wooden spine, one red line
-      px(ctx, hx - 5, hy - 3, 11, 6, P.woodDark)
-      px(ctx, hx - 4, hy - 2, 4, 4, P.bone)
-      px(ctx, hx + 1, hy - 2, 4, 4, P.boneDim)
-      px(ctx, hx, hy - 3, 1, 6, P.ink)
-      px(ctx, hx - 3, hy, 2, 1, P.bloodLit)
+      // small notebook with a chart line
+      px(ctx, hx - 5, hy - 3, 11, 7, P.bone)
+      px(ctx, hx - 5, hy - 3, 11, 1, P.white)
+      px(ctx, hx - 5, hy - 3, 1, 7, P.ink)
+      pxLine(ctx, hx - 3, hy + 1, hx + 4, hy - 1, P.tealLit, 1)
       break
     case 'slate':
-      // a wax slate and a stylus, teal chalk dust coming off it
-      px(ctx, hx - 3, hy - 2, 7, 3, P.wood)
-      px(ctx, hx - 3, hy - 2, 7, 1, P.woodLit)
-      for (let i = 0; i < 7; i += 2) px(ctx, hx - 3 + i, hy + 1, 1, 3, P.boneDim)
-      pxa(ctx, hx - 5, hy - 5, 3, 3, P.tealLit, 0.7)
-      pxa(ctx, hx + 3, hy - 7, 2, 2, P.tealLit, 0.6)
+      // phone / small tablet for hedging
+      px(ctx, hx - 4, hy - 5, 8, 10, P.plateDark)
+      px(ctx, hx - 3, hy - 4, 6, 7, '#061018')
+      px(ctx, hx - 2, hy - 2, 4, 1, P.tealLit)
+      px(ctx, hx - 1, hy + 1, 2, 1, P.emberLit)
       break
     case 'chips':
       // two market tokens, pip up

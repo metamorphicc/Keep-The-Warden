@@ -175,10 +175,10 @@
   justify-content: space-between;
   gap: 6px;
   padding: 18px 16px calc(14px + var(--sa-bottom));
-  background-color: #0c0806;
+  background-color: #070a0f;
   background-image:
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0 2px, rgba(0, 0, 0, 0) 2px 4px),
-    var(--tex-plank-dark);
+    repeating-linear-gradient(180deg, rgba(104, 201, 255, 0.035) 0 2px, rgba(0, 0, 0, 0) 2px 4px),
+    var(--tex-stone);
   overflow: hidden;
 }
 
@@ -203,7 +203,7 @@
 .boot__eyebrow {
   font-size: 8px;
   letter-spacing: 0.22em;
-  color: var(--ember-pale);
+  color: var(--spirit-pale);
 }
 
 .boot__title {
@@ -216,7 +216,7 @@
   line-height: 1.25;
   font-weight: 400;
   text-transform: uppercase;
-  color: var(--gold-lit);
+  color: var(--spirit-pale);
   text-align: center;
   text-shadow:
     2px 2px 0 var(--ink),
@@ -240,7 +240,7 @@
 .boot__rule span {
   flex: 1;
   height: 3px;
-  background: var(--gold-dark);
+  background: var(--spirit-deep);
   box-shadow: 0 2px 0 0 var(--ink);
 }
 
@@ -267,10 +267,46 @@
 }
 
 .boot__line {
-  min-height: 34px;
+  min-height: 26px;
   padding: 0 6px;
   line-height: 1.5;
   color: var(--bone-dim);
+}
+
+.boot__intro {
+  width: 100%;
+  padding: 8px 9px;
+  background: rgba(5, 8, 13, 0.72);
+  border: 2px solid var(--ink);
+  box-shadow:
+    inset 0 2px 0 0 rgba(199, 242, 255, 0.08),
+    inset 3px 0 0 0 var(--spirit-deep);
+  color: var(--bone-dim);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+
+.boot__intro p {
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--bone);
+}
+
+.boot__intro ul {
+  display: grid;
+  gap: 3px;
+  padding-top: 5px;
+  list-style: none;
+}
+
+.boot__intro li {
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.boot__intro li::before {
+  content: '>';
+  color: var(--spirit-lit);
+  padding-right: 5px;
 }
 
 .boot__away {
@@ -987,6 +1023,13 @@
   .boot__title {
     font-size: 18px;
   }
+  .boot__intro {
+    padding: 6px 8px;
+  }
+  .boot__intro p,
+  .boot__intro li {
+    font-size: 8px;
+  }
 }
 
 /* Landscape phones and other very short viewports: decoration goes first. */
@@ -999,6 +1042,9 @@
     padding: 4px 2px;
   }
   .room__hero-tag {
+    display: none;
+  }
+  .boot__intro {
     display: none;
   }
 }

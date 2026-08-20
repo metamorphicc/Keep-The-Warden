@@ -9,12 +9,12 @@ import { useGame } from '../game/store'
 import { unlockAudio } from '../game/sound'
 import { formatAway } from '../game/util'
 import { P } from '../styles/palette'
-import { px, pxa, pxLine, dither, type Ctx } from '../render/draw'
+import { dither, px, pxa, pxLine, type Ctx } from '../render/draw'
 import { drawWardenPortrait } from '../render/warden'
 
 /* ==========================================================================
-   Boot / title screen. Also the audio unlock gesture — the browser will not
-   let us make a sound until the player touches something.
+   Boot / title screen. Also the audio unlock gesture: the browser will not let
+   us make a sound until the player touches something.
    ========================================================================== */
 
 const TITLE_W = 132
@@ -42,7 +42,7 @@ export function BootScreen() {
     let raf = 0
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame)
-      drawPlinth(ctx, now)
+      drawStarterDesk(ctx, now)
       drawWardenPortrait(ctx, TITLE_W / 2, TITLE_H - 12, look, now, stats)
     }
     raf = requestAnimationFrame(frame)
@@ -62,7 +62,7 @@ export function BootScreen() {
         <p className="t-label t-dim boot__eyebrow">{WORLD.subtitle}</p>
         <h1 className="boot__title t-shadow">
           <span>Quantum</span>
-          <span className="boot__title-small">— sim —</span>
+          <span className="boot__title-small">- sim -</span>
           <span>Pit</span>
         </h1>
         <div className="boot__rule">
@@ -75,10 +75,19 @@ export function BootScreen() {
       <canvas ref={canvasRef} className="boot__art" aria-hidden="true" />
 
       <div className="boot__bottom">
+        <div className="boot__intro">
+          <p>Max is 18. The bankroll is simulated. The desk is real enough.</p>
+          <ul>
+            <li>Research builds Edge.</li>
+            <li>Break restores Focus and cools Heat.</li>
+            <li>Clean wins build Rep.</li>
+          </ul>
+        </div>
+
         <p className="t-body t-center boot__line">{line}</p>
 
         <PixelButton
-          label={visits > 1 ? 'Back to the Desk' : 'Take the Desk'}
+          label={visits > 1 ? 'Back to the Desk' : 'Start at the Desk'}
           icon="torch"
           variant="gold"
           size="lg"
@@ -93,64 +102,59 @@ export function BootScreen() {
         ) : null}
 
         <p className="t-label boot__version">
-          v{GAME_VERSION} · {WORLD.disclaimer}
+          v{GAME_VERSION} - {WORLD.disclaimer}
         </p>
       </div>
     </div>
   )
 }
 
-/* --------------------------------------------------------------------------
-   A small stone plinth with two braziers, drawn behind the portrait.
-   -------------------------------------------------------------------------- */
+function drawStarterDesk(ctx: Ctx, t: number): void {
+  px(ctx, 0, 0, TITLE_W, TITLE_H, '#070a0f')
 
-function drawPlinth(ctx: Ctx, t: number): void {
-  px(ctx, 0, 0, TITLE_W, TITLE_H, '#0c0806')
-
-  // back arch
-  px(ctx, 30, 6, 72, TITLE_H - 22, '#140d09')
-  px(ctx, 34, 10, 64, TITLE_H - 26, '#1a110b')
-  for (let y = 10; y < TITLE_H - 16; y += 12) {
-    px(ctx, 34, y, 64, 1, '#241609')
+  // apartment wall and city window
+  px(ctx, 0, 0, TITLE_W, TITLE_H - 14, '#111820')
+  for (let x = 0; x < TITLE_W; x += 14) {
+    px(ctx, x, 0, 1, TITLE_H - 14, '#0b1017')
+    pxa(ctx, x + 1, 0, 1, TITLE_H - 14, '#ffffff', 0.035)
+  }
+  px(ctx, 32, 8, 68, 43, '#07111f')
+  px(ctx, 32, 8, 68, 2, P.plateLit)
+  px(ctx, 64, 8, 2, 43, P.plateDark)
+  px(ctx, 32, 29, 68, 2, P.plateDark)
+  for (let i = 0; i < 7; i++) {
+    const bx = 36 + i * 8
+    const bh = 10 + ((i * 7) % 18)
+    px(ctx, bx, 48 - bh, 5, bh, '#0d2132')
+    if (i % 2 === 0) px(ctx, bx + 1, 45 - bh / 2, 3, 1, P.spiritLit)
   }
 
   // floor
   px(ctx, 0, TITLE_H - 14, TITLE_W, 14, P.stoneDark)
   px(ctx, 0, TITLE_H - 14, TITLE_W, 2, P.stoneLit)
-  for (let x = 0; x < TITLE_W; x += 22) {
-    px(ctx, x, TITLE_H - 12, 1, 12, P.stoneDeep)
-  }
+  for (let x = 0; x < TITLE_W; x += 22) px(ctx, x, TITLE_H - 12, 1, 12, P.stoneDeep)
 
-  const flick = 0.8 + Math.sin(t / 120) * 0.12 + Math.sin(t / 53) * 0.08
-
-  // braziers
-  for (const bx of [12, TITLE_W - 26]) {
-    px(ctx, bx + 4, TITLE_H - 30, 6, 18, P.plateDark)
-    px(ctx, bx, TITLE_H - 38, 14, 8, P.plateDark)
-    px(ctx, bx, TITLE_H - 38, 14, 2, P.plateLit)
-    const h = 5 + (Math.floor(t / 100) % 3)
-    pxa(ctx, bx + 3, TITLE_H - 38 - h, 8, h, P.ember, 0.95)
-    pxa(ctx, bx + 5, TITLE_H - 38 - h - 2, 4, 3, P.emberLit, 0.9 * flick)
-    pxa(ctx, bx - 6, TITLE_H - 48, 26, 30, P.ember, 0.05 * flick)
-  }
-
-  // spirit light bleeding through the arch — dithered, never a flat wash
-  for (let i = 0; i < 5; i++) {
-    const w = 34 - i * 6
-    dither(
-      ctx,
-      66 - w / 2,
-      10 + i * 3,
-      w,
-      TITLE_H - 30 - i * 8,
-      i > 2 ? P.spiritLit : P.spirit,
-      i > 1 ? 2 : 1,
-      0.09 - i * 0.012,
-    )
-  }
-  dither(ctx, 48, 10, 36, 6, P.spiritPale, 1, 0.12)
-  pxLine(ctx, 66, 10, 66, 26, `rgba(122,183,214,0.1)`, 6)
+  // starter desk and monitors
+  px(ctx, 18, 62, 96, 9, P.wood)
+  px(ctx, 18, 62, 96, 2, P.woodHi)
+  px(ctx, 18, 70, 96, 2, P.woodDeep)
+  drawMiniMonitor(ctx, 33, 44, 25, 18, t, 0)
+  drawMiniMonitor(ctx, 72, 40, 28, 21, t, 1)
+  px(ctx, 56, 62, 22, 4, P.plateDeep)
+  px(ctx, 87, 66, 12, 3, P.bone)
+  pxLine(ctx, 49, 72, 31, 92, P.plateDeep, 1)
+  pxLine(ctx, 82, 72, 104, 92, P.plateDeep, 1)
 
   dither(ctx, 0, 0, TITLE_W, 10, '#000000', 1, 0.35)
   dither(ctx, 0, TITLE_H - 6, TITLE_W, 6, '#000000', 1, 0.25)
+}
+
+function drawMiniMonitor(ctx: Ctx, x: number, y: number, w: number, h: number, t: number, seed: number): void {
+  px(ctx, x, y, w, h, P.plateDark)
+  px(ctx, x, y, w, 1, P.plateLit)
+  px(ctx, x + 2, y + 3, w - 4, h - 7, '#061018')
+  const scan = Math.floor(t / 260 + seed * 3) % 6
+  px(ctx, x + 5, y + 8, 6 + scan, 1, seed ? P.spiritLit : P.tealLit)
+  pxLine(ctx, x + 4, y + h - 6, x + w - 5, y + 5 + scan, seed ? P.spiritLit : P.tealLit, 1)
+  px(ctx, x + Math.floor(w / 2) - 1, y + h, 3, 5, P.plateDark)
 }

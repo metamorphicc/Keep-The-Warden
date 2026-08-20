@@ -14,7 +14,7 @@ import type { IconName } from '../components/PixelIcon'
    World
 
    A paper-trading sim. No real money, no real book, no wallet. One room, one
-   desk, one old trader keeping the book alive.
+   desk, one beginner trying to become a quant trader.
    ========================================================================== */
 
 export const GAME_VERSION = '2.0.0'
@@ -56,7 +56,7 @@ export const WORLD = {
   hall: 'The Desk',
   /** the settings screen */
   keep: 'The Back Office',
-  hero: 'Old Halvard',
+  hero: 'Max',
   cashName: 'Bankroll',
   creditName: 'Credits',
   /** printed anywhere the player might forget */
@@ -105,8 +105,8 @@ export const STATS: Record<StatKey, StatMeta> = {
     icon: 'star',
     color: P.tealLit,
     colorDark: P.tealDeep,
-    driftPerHour: 2,
-    warn: 'Nobody has quoted him in days. The desk forgets fast.',
+    driftPerHour: 0,
+    warn: 'His name is still nobody. Win cleanly before asking for respect.',
   },
 }
 
@@ -180,7 +180,7 @@ export const ACTIONS: Record<string, ActionDef> = {
     id: 'hedge',
     label: 'Hedge',
     icon: 'brush',
-    gain: { heat: -26, focus: -4, rep: -1 },
+    gain: { heat: -26, focus: -4 },
     /** the hedge costs a little simulated cash to put on */
     cash: -2,
     cooldown: 26_000,
@@ -237,11 +237,10 @@ export const EDGE_SOFT_CAP = 92
    ========================================================================== */
 
 export const TAP = {
-  repPerTap: 0.9,
   focusPerTap: 0.3,
-  /** soft cap: max rep gain per window */
+  /** soft cap: max PnL checking per window */
   windowMs: 60_000,
-  windowCap: 9,
+  windowCap: 12,
   /** chance a check shakes a credit loose (a rebate, a referral, who knows) */
   creditChance: 0.06,
   duration: 620,
@@ -459,12 +458,12 @@ export const RIGS: RigDef[] = [
   // ---- headset ----
   {
     id: 'head_none',
-    name: 'Bare Head',
+    name: 'Messy Hair',
     slot: 'head',
     icon: 'mask',
     price: 0,
     currency: 'bankroll',
-    desc: 'Just the beard and the eye bags. Classic.',
+    desc: 'Eighteen, under-slept, and not yet pretending otherwise.',
     starter: true,
   },
   {
@@ -497,12 +496,12 @@ export const RIGS: RigDef[] = [
   // ---- coat ----
   {
     id: 'cloak_rag',
-    name: 'Frayed Housecoat',
+    name: 'Home Hoodie',
     slot: 'cloak',
     icon: 'cloak',
     price: 0,
     currency: 'bankroll',
-    desc: 'Forty months of holes, arranged with dignity.',
+    desc: 'Soft, ordinary, and absolutely not professional. Starter uniform.',
     starter: true,
   },
   {
@@ -535,12 +534,12 @@ export const RIGS: RigDef[] = [
   // ---- probes ----
   {
     id: 'blade_steel',
-    name: 'Plain Styluses',
+    name: 'Cheap Styluses',
     slot: 'blade',
     icon: 'sword',
     price: 0,
     currency: 'bankroll',
-    desc: 'Two blunt sticks. They have never lied to him.',
+    desc: 'Plastic tips, cracked cable, still better than guessing.',
     starter: true,
   },
   {
@@ -581,7 +580,7 @@ export function freshSave(now: number): SaveData {
   return {
     version: SAVE_VERSION,
     name: WORLD.hero,
-    stats: { edge: 40, focus: 62, heat: 18, rep: 30 },
+    stats: { edge: 40, focus: 62, heat: 18, rep: 8 },
     bankroll: START_BANKROLL,
     peakBankroll: START_BANKROLL,
     credits: 2,

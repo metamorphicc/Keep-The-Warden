@@ -184,8 +184,8 @@ function blockedBy(actionId: string): string | null {
 /* ==========================================================================
    Tap him = check the PnL
 
-   Free, endless, and deliberately the weakest way to make progress. The window
-   caps how much Rep a thumb can farm before he stops performing.
+   Free, endless, and deliberately weak. The window caps how often a thumb can
+   demand another PnL check before he stops performing.
    ========================================================================== */
 
 export function checkPnl(x?: number, y?: number): void {
@@ -202,14 +202,14 @@ export function checkPnl(x?: number, y?: number): void {
     return
   }
 
-  const gain: Partial<Stats> = { rep: TAP.repPerTap, focus: TAP.focusPerTap }
+  const gain: Partial<Stats> = { focus: TAP.focusPerTap }
   const gotCredit = chance(TAP.creditChance)
 
   setState({
     stats: addStats(gain),
     credits: s.credits + (gotCredit ? 1 : 0),
     activity: { kind: 'pnl', startedAt: now, duration: TAP.duration },
-    tapWindow: { since: window.since, gained: window.gained + TAP.repPerTap },
+    tapWindow: { since: window.since, gained: window.gained + 1 },
     tally: { ...s.tally, taps: s.tally.taps + 1 },
   })
 
@@ -739,7 +739,6 @@ export function demeanour(stats: Stats): Demeanour {
   if (stats.heat >= STAT_HIGH) return 'hot'
   if (stats.focus < STAT_LOW) return 'fried'
   if (stats.edge < STAT_LOW) return 'blind'
-  if (stats.rep < STAT_LOW) return 'ghosted'
   return 'sharp'
 }
 
@@ -776,5 +775,6 @@ export function propLine(prop: 'urn' | 'terminal' | 'bed' | 'torchL' | 'torchR' 
 
 /** Used by the HUD to decide when a gauge should start blinking. */
 export function isAlarming(key: StatKey, value: number): boolean {
+  if (key === 'rep') return false
   return STATS[key].inverted ? value >= STAT_HIGH : value < STAT_LOW
 }

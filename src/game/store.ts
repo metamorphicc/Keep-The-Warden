@@ -130,10 +130,11 @@ export function addStats(delta: Partial<Stats>): Stats {
  */
 export function overallForm(stats: Stats): number {
   let sum = 0
-  for (const key of STAT_ORDER) {
+  const formKeys = STAT_ORDER.filter((key) => key !== 'rep')
+  for (const key of formKeys) {
     sum += STATS[key].inverted ? 100 - stats[key] : stats[key]
   }
-  return sum / STAT_ORDER.length
+  return sum / formKeys.length
 }
 
 /**

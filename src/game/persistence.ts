@@ -126,8 +126,9 @@ function migrate(input: Partial<SaveData>, base: SaveData): SaveData {
 
   return {
     version: SAVE_VERSION,
-    // Saves written before v4 have no name at all.
-    name: typeof input.name === 'string' ? sanitizeName(input.name) : base.name,
+    // Saves written before v4 have no name at all. The old default name is
+    // presentation debt, not a player choice, so it follows the new character.
+    name: readName(input.name, base.name),
     stats,
     bankroll,
     peakBankroll: Math.max(bankroll, num(input.peakBankroll, base.peakBankroll)),
@@ -172,6 +173,12 @@ function readMarkets(input: unknown): MarketState[] {
 
 function num(v: unknown, fallback: number): number {
   return typeof v === 'number' && Number.isFinite(v) ? v : fallback
+}
+
+function readName(v: unknown, fallback: string): string {
+  if (typeof v !== 'string') return fallback
+  const name = sanitizeName(v)
+  return name === 'Old Halvard' ? fallback : name
 }
 
 function str(v: unknown, fallback: string | null): string | null {

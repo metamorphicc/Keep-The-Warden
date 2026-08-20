@@ -11,14 +11,14 @@ function pick<T>(arr: readonly T[]): T {
 const IDLE = [
   'The book is noisy. Find an edge or get chopped.',
   'He watches a quote breathe. It is lying about something.',
-  'Forty years of screens and nobody sends a letter.',
+  'Three screens, one hoodie, zero seniority.',
   'He re-reads the resolution rules. They have not improved.',
   'Somebody big moved in the ETF question. Probably nothing.',
-  'He remembers a fill he would rather not.',
+  'He remembers a fill from yesterday and already calls it "experience".',
   'The terminal hums. That is most of the job.',
   'He mutters a number, then halves it. Old habit.',
-  'Dust settles on the old man like it is marking him to market.',
-  'He says he is flat. He says it too often.',
+  'Dust settles on the desk like it is marking him to market.',
+  'He says he is flat. He checks again anyway.',
 ] as const
 
 const GREET_SHORT = [
@@ -35,10 +35,10 @@ const GREET_LONG = [
 ] as const
 
 const PNL = [
-  'He turns the book toward you. Grunts. That is the summary.',
-  'A tap on the ledger. He pretends not to need the audience.',
+  'He turns the book toward you. Tries to look casual. Fails.',
+  'A tap on the ledger. He pretends this is a process.',
   'The screen flares green for a second. Show-off.',
-  'He almost smiles. The beard hides the evidence.',
+  'He almost smiles, then remembers variance exists.',
   '"Check it again and I will start charging you for the look."',
   'Numbers scroll. He reads them like weather.',
   'He leans into the review, then denies leaning.',
@@ -64,10 +64,10 @@ const SATURATED = [
 ] as const
 
 const RECOVER = [
-  'He sleeps in the chair by choice. He calls a bed "soft thinking".',
-  'Out cold in nine seconds. Old trader trick.',
+  'He sleeps in the chair because the bed is six steps away.',
+  'Out cold in nine seconds. Teenage operating system.',
   'Snoring like a printer. The heat bleeds off.',
-  'He dreams of a flat book. He has one. He still dreams of it.',
+  'He dreams of a flat book. Then wakes up and checks it.',
 ] as const
 
 const HEDGE = [
@@ -151,7 +151,7 @@ const SLIP = [
 ] as const
 
 const COOLDOWN = [
-  'Give him a moment. He is old, not instant.',
+  'Give him a moment. He is fast, not magic.',
   'Not yet. He is still recovering from the last idea.',
 ] as const
 
@@ -178,7 +178,7 @@ const PROP_URN = [
 ] as const
 
 const PROP_BED = [
-  'An office chair, a torn cushion, forty years of bad hours.',
+  'An office chair, a torn cushion, and the posture of a future warning label.',
   'He calls it ergonomic because nobody is awake to dispute him.',
 ] as const
 
@@ -215,9 +215,9 @@ export const COPY = {
 
 /** Boot screen lines. */
 export const BOOT_LINES = [
-  'Somebody has to price the questions nobody can answer.',
-  'The money is fake. The burnout is not.',
-  'He was early once. Now he keeps three monitors and a grudge.',
+  'He is 18, underfunded, and trying to turn research into edge.',
+  'The money is fake. The habits are not.',
+  'First desk. First book. First time the market does not care.',
 ] as const
 
 export function bootLine(): string {
