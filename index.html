@@ -6,21 +6,40 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#120c08" />
-
-    <!-- Pixel blade, inlined so a static host never serves a 404 for it. -->
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23120c08'/%3E%3Crect x='7' y='2' width='2' height='8' fill='%23efe0bc'/%3E%3Crect x='7' y='2' width='1' height='8' fill='%23fff8e6'/%3E%3Crect x='4' y='10' width='8' height='2' fill='%23d8a63a'/%3E%3Crect x='7' y='12' width='2' height='3' fill='%236b4a22'/%3E%3C/svg%3E"
-    />
+    <meta name="theme-color" content="#05080d" />
+    <meta name="application-name" content="Quantum Pit" />
+    <meta name="apple-mobile-web-app-title" content="Quantum Pit" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="description"
-      content="Quantum Pit — a Polymarket trader simulator. Paper trading only: no real money, no real orders."
+      content="Quantum Pit - a pixel-art quant trader room simulator. Paper trading only: no real money, no real orders."
     />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <link rel="icon" href="/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/app-icon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta property="og:title" content="Quantum Pit" />
+    <meta
+      property="og:description"
+      content="Start broke, build edge, upgrade the room. A pixel-art quant trader simulator with paper trading only."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/start-banner.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Quantum Pit" />
+    <meta
+      name="twitter:description"
+      content="Start broke, build edge, upgrade the room. Paper trading only."
+    />
+    <meta name="twitter:image" content="/start-banner.png" />
+
     <title>Quantum Pit</title>
 
-    <!-- Telegram Mini App bridge. Must load before the app boots. -->
+    <!-- Telegram bridge remains optional; outside Telegram the app runs as a normal web app. -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "Quantum Pit - a pixel-art Polymarket trader simulator (paper trading only) as a Telegram Mini App",
+  "description": "Quantum Pit - a pixel-art Polymarket trader simulator for Base App, Telegram, and mobile web",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

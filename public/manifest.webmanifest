@@ -1,0 +1,25 @@
+{
+  "name": "Quantum Pit",
+  "short_name": "Quantum Pit",
+  "description": "A pixel-art quant trader room simulator. Paper trading only: no real money, no real orders.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05080d",
+  "theme_color": "#05080d",
+  "categories": ["games", "finance", "entertainment"],
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/start-banner.png",
+      "sizes": "1200x630",
+      "type": "image/png"
+    }
+  ]
+}
