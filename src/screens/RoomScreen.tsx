@@ -15,8 +15,10 @@ import {
   STATS,
   STAT_ORDER,
   WORLD,
+  careerStatusForLevel,
+  levelFromXp,
 } from '../game/config'
-import { bankrollHealth, overallForm, useGameState } from '../game/store'
+import { bankrollHealth, useGameState } from '../game/store'
 import { formatCash, formatSeconds } from '../game/util'
 
 /* ==========================================================================
@@ -29,8 +31,9 @@ export function RoomScreen() {
   const s = useGameState()
   const now = Date.now()
   const day = Math.max(1, Math.floor((now - s.firstVisit) / 86_400_000) + 1)
-  const form = overallForm(s.stats)
   const stashCount = Object.values(s.stash).reduce((a, b) => a + b, 0)
+  const level = levelFromXp(s.xp)
+  const career = careerStatusForLevel(level)
 
   return (
     <div className="screen room">
@@ -52,7 +55,7 @@ export function RoomScreen() {
         >
           <span className="t-label t-gold">{s.name}</span>
           <span className="t-label t-dim">
-            {form >= 70 ? 'Reading it well' : form >= 40 ? 'Grinding' : 'Getting chopped'}
+            Lv. {level} · {career}
           </span>
         </button>
 

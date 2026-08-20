@@ -203,6 +203,53 @@ function drawMonitorBank(ctx: Ctx): void {
   px(ctx, 127, 134, 34, 1, P.ink)
 }
 
+function drawMiniChart(
+  ctx: Ctx,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  values: readonly number[],
+  color: string,
+  t: number,
+  feed: number,
+  candles = false,
+): void {
+  px(ctx, x, y, w, h, '#061018')
+  for (let r = 1; r < 3; r++) pxa(ctx, x + 1, y + Math.floor((h * r) / 3), w - 2, 1, P.plateLit, 0.18)
+  for (let c = 1; c < 3; c++) pxa(ctx, x + Math.floor((w * c) / 3), y + 1, 1, h - 2, P.plateLit, 0.12)
+
+  const ox = x + 3
+  const oy = y + 2
+  const iw = w - 6
+  const ih = h - 5
+  const step = iw / Math.max(1, values.length - 1)
+  const points = values.map((v, i) => ({
+    x: Math.round(ox + i * step),
+    y: Math.round(oy + (1 - v) * ih),
+  }))
+
+  if (candles) {
+    points.forEach((p, i) => {
+      const prev = points[Math.max(0, i - 1)]
+      const high = Math.min(p.y, prev.y) - 2
+      const low = Math.max(p.y, prev.y) + 2
+      const up = p.y <= prev.y
+      pxLine(ctx, p.x, high, p.x, low, up ? P.greenLit : P.emberLit, 1)
+      px(ctx, p.x - 1, Math.min(p.y, prev.y), 3, Math.max(2, Math.abs(p.y - prev.y) + 1), up ? P.greenLit : P.emberLit)
+    })
+  } else {
+    points.forEach((p, i) => {
+      if (i === 0) return
+      const prev = points[i - 1]
+      pxLine(ctx, prev.x, prev.y, p.x, p.y, color, 1)
+    })
+  }
+
+  const scan = x + 2 + (Math.floor(t / 180) % Math.max(2, w - 4))
+  pxa(ctx, scan, y + 1, 1, h - 2, color, 0.18 + feed * 0.18)
+}
+
 function drawDesk(ctx: Ctx): void {
   const y = 133
   px(ctx, 22, y, 148, 12, P.wood)
@@ -465,25 +512,18 @@ export function drawRoom(ctx: Ctx, o: RoomOpts): void {
 
   // monitor charts
   const feed = 0.42 + o.edge * 0.58
+  const chartSets = [
+    [0.32, 0.38, 0.35, 0.5, 0.57, 0.63, 0.58, 0.7],
+    [0.74, 0.66, 0.78, 0.56, 0.62, 0.48, 0.58, 0.43, 0.51, 0.37],
+    [0.28, 0.28, 0.34, 0.33, 0.42, 0.49, 0.61, 0.67],
+  ] as const
   MONITORS.forEach((m, mi) => {
-    const scan = Math.floor(o.t / (150 + mi * 25)) % 4
     const sx = m.x + 5
     const sy = m.y + 6
     const sw = m.w - 10
     const sh = m.h - 13
-    pxa(ctx, sx, sy, sw, sh, mi === 1 ? P.spiritDeep : P.tealDeep, 0.22 * feed)
-    for (let r = 0; r < 4; r++) {
-      const y = sy + 3 + r * Math.max(3, Math.floor(sh / 5))
-      const rowW = 7 + ((Math.floor(o.t / 360) + r * 3 + mi) % Math.max(8, sw - 5))
-      pxa(ctx, sx + 2, y, Math.min(rowW, sw - 4), 1, m.hue, feed * (r === scan ? 0.95 : 0.42))
-    }
-    for (let i = 0; i < 4; i++) {
-      const x0 = sx + 3 + i * Math.floor(sw / 5)
-      const y0 = sy + sh - 3 - ((i * 5 + Math.floor(o.t / 260) + mi * 3) % Math.max(5, sh - 4))
-      const x1 = sx + 6 + (i + 1) * Math.floor(sw / 5)
-      const y1 = sy + sh - 4 - (((i + 1) * 7 + Math.floor(o.t / 260) + mi * 3) % Math.max(5, sh - 4))
-      pxLine(ctx, x0, y0, x1, y1, mi === 1 ? P.spiritLit : P.tealLit, 1)
-    }
+    drawMiniChart(ctx, sx, sy, sw, sh, chartSets[mi], mi === 1 ? P.spiritLit : P.tealLit, o.t + mi * 240, feed, mi === 1)
+    pxa(ctx, sx, sy, sw, sh, mi === 1 ? P.spiritDeep : P.tealDeep, 0.08 * feed)
     lightPool(ctx, m.x + m.w / 2, m.y + m.h / 2, 22 + mi * 2, m.hue, 0.06 * feed * lightStrength)
   })
 

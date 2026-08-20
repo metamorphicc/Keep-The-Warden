@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { getState } from '../game/store'
-import { dither, px, pxa, type Ctx } from '../render/draw'
+import { dither, px, pxa, pxLine, type Ctx } from '../render/draw'
 import { drawWardenPortrait } from '../render/warden'
 import { P } from '../styles/palette'
 
@@ -50,27 +50,58 @@ export function WardenPlinth({
   return <canvas ref={canvasRef} className={className} aria-hidden="true" />
 }
 
-/** Panelled back wall, stone step, and two candles for rim light. */
+/** Wardrobe preview: mirror, clothes rail, shelves, boxes, and a clean step. */
 function drawAlcove(ctx: Ctx, w: number, h: number, t: number): void {
-  px(ctx, 0, 0, w, h, '#0e0a07')
+  px(ctx, 0, 0, w, h, '#070a0f')
 
-  for (let x = 0; x < w; x += 14) {
-    px(ctx, x, 0, 13, h - 12, x % 28 === 0 ? '#1a1109' : '#160e08')
-    px(ctx, x + 13, 0, 1, h - 12, '#0a0604')
+  // matte closet wall, not wooden planks
+  px(ctx, 4, 4, w - 8, h - 17, '#101821')
+  px(ctx, 4, 4, w - 8, 2, P.plateLit)
+  px(ctx, 4, 4, 2, h - 17, P.ink)
+  px(ctx, w - 6, 4, 2, h - 17, P.ink)
+
+  // side mirror
+  px(ctx, 8, 12, 22, h - 33, '#081320')
+  px(ctx, 8, 12, 2, h - 33, P.plateLit)
+  px(ctx, 28, 12, 2, h - 33, P.plateDeep)
+  pxa(ctx, 12, 18, 9, h - 45, P.spiritPale, 0.1)
+  pxLine(ctx, 13, 19, 24, 36, P.spiritDeep, 1)
+  pxLine(ctx, 11, 45, 21, 59, P.spiritDeep, 1)
+
+  // open wardrobe rail and hanging starter clothes
+  px(ctx, 37, 14, 74, 3, P.plateDeep)
+  px(ctx, 37, 14, 74, 1, P.plateLit)
+  px(ctx, 38, 17, 2, 50, '#0b1017')
+  px(ctx, 109, 17, 2, 50, '#0b1017')
+  const sway = Math.sin(t / 900) > 0 ? 1 : 0
+  const clothes = [
+    { x: 44, w: 11, c: '#253646', lit: '#40536a' },
+    { x: 58, w: 10, c: '#1d2935', lit: '#344457' },
+    { x: 83, w: 9, c: '#d7dccf', lit: P.white },
+    { x: 95, w: 10, c: '#203049', lit: '#3b516d' },
+  ] as const
+  for (const item of clothes) {
+    pxLine(ctx, item.x + Math.floor(item.w / 2), 17, item.x + Math.floor(item.w / 2) - 3, 21, P.plateLit, 1)
+    px(ctx, item.x + sway, 21, item.w, 34, item.c)
+    px(ctx, item.x + sway, 21, item.w, 1, item.lit)
+    px(ctx, item.x + sway, 54, item.w, 2, '#0b1017')
   }
 
-  px(ctx, 0, h - 12, w, 12, P.stoneDark)
-  px(ctx, 0, h - 12, w, 2, P.stoneLit)
-  px(ctx, 0, h - 3, w, 3, '#181512')
-  for (let x = 6; x < w; x += 26) px(ctx, x, h - 10, 1, 7, P.stoneDeep)
+  // shelves and storage boxes for later outfits/upgrades
+  px(ctx, 34, 64, 82, 3, P.plateDeep)
+  px(ctx, 34, 64, 82, 1, P.plateLit)
+  px(ctx, 35, 68, 19, 10, '#1b2630')
+  px(ctx, 57, 68, 21, 10, '#17212b')
+  px(ctx, 96, 67, 18, 11, '#1d2935')
+  px(ctx, 38, 71, 8, 1, P.goldLit)
+  px(ctx, 61, 71, 9, 1, P.tealLit)
+  px(ctx, 100, 70, 8, 1, P.spiritLit)
 
-  const flame = 4 + (Math.floor(t / 130) % 3)
-  for (const cx of [10, w - 14]) {
-    px(ctx, cx, h - 26, 5, 14, P.boneDim)
-    px(ctx, cx, h - 26, 5, 2, P.bone)
-    pxa(ctx, cx + 1, h - 26 - flame, 3, flame, P.emberLit, 0.95)
-    pxa(ctx, cx - 8, h - 44, 20, 28, P.ember, 0.06)
-  }
+  // floor step
+  px(ctx, 0, h - 14, w, 14, P.stoneDark)
+  px(ctx, 0, h - 14, w, 2, P.stoneLit)
+  px(ctx, 0, h - 3, w, 3, '#111820')
+  for (let x = 6; x < w; x += 26) px(ctx, x, h - 12, 1, 8, P.stoneDeep)
 
   dither(ctx, 0, 0, w, 12, '#000000', 1, 0.4)
   dither(ctx, 0, 0, 6, h, '#000000', 1, 0.2)

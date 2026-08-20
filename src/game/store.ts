@@ -45,6 +45,7 @@ function saveSlice(): SaveData {
     name: state.name,
     stats: state.stats,
     bankroll: state.bankroll,
+    xp: state.xp,
     peakBankroll: state.peakBankroll,
     credits: state.credits,
     stash: state.stash,

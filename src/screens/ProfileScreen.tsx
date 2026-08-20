@@ -15,6 +15,8 @@ import {
   STATS,
   STAT_ORDER,
   WORLD,
+  careerStatusForLevel,
+  xpProgress,
 } from '../game/config'
 import { bankrollHealth, overallForm, useGameState } from '../game/store'
 import type { EquipSlot } from '../game/types'
@@ -22,7 +24,7 @@ import { formatAway, formatCash, formatSigned } from '../game/util'
 import { cloudAvailable, tgUserId, tgUserName, tgUsername } from '../telegram/telegram'
 
 /* ==========================================================================
-   Trading record — who he is, how he is reading it, and the whole book.
+   Trading record: who he is, how he is reading it, and the whole book.
    Also the only place his name can be changed.
    ========================================================================== */
 
@@ -38,6 +40,8 @@ export function ProfileScreen() {
   const settled = s.tally.wins + s.tally.losses
   const hitRate = settled > 0 ? Math.round((s.tally.wins / settled) * 100) : 0
   const drawdown = s.peakBankroll > 0 ? Math.round((1 - s.bankroll / s.peakBankroll) * 100) : 0
+  const xp = xpProgress(s.xp)
+  const career = careerStatusForLevel(xp.level)
   const synced = cloudAvailable()
   // A Telegram account id is what namespaces the save. No id means we are in a
   // plain browser (or a client that hides the user), whatever the SDK claims.
@@ -56,7 +60,7 @@ export function ProfileScreen() {
     ? 'Held against your Telegram account, so the book turns up on any device you sign into.'
     : linked
       ? 'This Telegram client is too old for account storage. The book lives on this device only.'
-      : 'Browser session. The book lives in this browser only — open the app inside Telegram to carry it around.'
+      : 'Browser session. The book lives in this browser only - open the app inside Telegram to carry it around.'
 
   function openRename(): void {
     setDraft(s.name)
@@ -79,9 +83,7 @@ export function ProfileScreen() {
             <div className="profile__plate">
               <span className="profile__name t-gold">{s.name}</span>
               <span className="t-label t-dim">
-                {s.name === WORLD.hero
-                  ? `${WORLD.hall} · Day ${daysHeld}`
-                  : `Badge says ${WORLD.hero} · Day ${daysHeld}`}
+                Lv. {xp.level} - {career} - Day {daysHeld}
               </span>
               <PixelButton
                 label="Rename him"
@@ -92,6 +94,33 @@ export function ProfileScreen() {
               />
             </div>
           </div>
+        </PixelPanel>
+
+        <PixelPanel
+          variant="darkwood"
+          title="Career"
+          titleIcon="star"
+          pad="md"
+          rivets
+          titleRight={<span className="t-label t-dim">Lv. {xp.level}</span>}
+        >
+          <ul className="detail__gains detail__gains--text">
+            <Row label="Status" value={career} icon="warden" />
+            <Row
+              label="Next step"
+              value={xp.level >= 30 ? 'capped' : `${xp.current}/${xp.needed} XP`}
+              icon="bolt"
+            />
+          </ul>
+          <PixelBar
+            label="XP"
+            icon="star"
+            value={xp.pct}
+            color="#68c9ff"
+            colorDark="#1f5f78"
+            valueText={xp.level >= 30 ? 'MAX' : `${xp.pct}%`}
+            showValue
+          />
         </PixelPanel>
 
         <PixelPanel
@@ -206,18 +235,18 @@ export function ProfileScreen() {
             <Row label="Sim positions" value={s.tally.bets} icon="terminal" />
             <Row
               label="Settled"
-              value={settled > 0 ? `${s.tally.wins}W / ${s.tally.losses}L · ${hitRate}%` : 'none yet'}
+              value={settled > 0 ? `${s.tally.wins}W / ${s.tally.losses}L - ${hitRate}%` : 'none yet'}
               icon="check"
             />
             <Row label="Best run" value={s.tally.bestStreak} icon="bolt" />
             <Row
               label="Best fill"
-              value={s.tally.bestWin > 0 ? formatSigned(s.tally.bestWin) : '—'}
+              value={s.tally.bestWin > 0 ? formatSigned(s.tally.bestWin) : '-'}
               icon="coin"
             />
             <Row
               label="Worst fill"
-              value={s.tally.worstLoss > 0 ? formatSigned(-s.tally.worstLoss) : '—'}
+              value={s.tally.worstLoss > 0 ? formatSigned(-s.tally.worstLoss) : '-'}
               icon="skull"
             />
             <Row label="Visits" value={s.visits} icon="gear" />

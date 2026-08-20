@@ -161,6 +161,7 @@ export interface TradeResult {
   fee: number
   slipped: boolean
   hedged: boolean
+  xpGained: number
 }
 
 /* ==========================================================================
@@ -174,6 +175,8 @@ export interface SaveData {
   stats: Stats
   /** simulated cash. Not real money. Never was. */
   bankroll: number
+  /** career progression, earned from settled simulated trades */
+  xp: number
   /** high-water mark, so the HUD can show a drawdown */
   peakBankroll: number
   credits: number

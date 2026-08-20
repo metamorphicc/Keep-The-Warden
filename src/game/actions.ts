@@ -1,8 +1,11 @@
 import {
   ACTIONS,
   BET,
+  XP,
   DESK_READ,
   EDGE_SOFT_CAP,
+  careerStatusForLevel,
+  levelFromXp,
   MARKET,
   MARKETS,
   MARKET_BY_ID,
@@ -497,6 +500,7 @@ export function placeSimBet(marketId: string, side: Side, stake: number): Action
   let raw = won ? stake * (1 / price - 1) : -stake
   if (hedged) raw *= won ? BET.hedgeWinMult : BET.hedgeLossMult
   const pnl = Math.round((raw - fee) * 100) / 100
+  const xpGained = won ? XP.win : XP.loss
 
   const result: TradeResult = {
     marketId,
@@ -510,6 +514,7 @@ export function placeSimBet(marketId: string, side: Side, stake: number): Action
     fee,
     slipped,
     hedged,
+    xpGained,
   }
 
   // charged now: the focus and heat of actually sizing something up
@@ -535,10 +540,14 @@ function resolveFill(result: TradeResult): void {
   const gain = result.won ? BET.win : BET.loss
   const streak = result.won ? Math.max(0, s.tally.streak) + 1 : 0
   const bankroll = Math.max(0, Math.round((s.bankroll + result.pnl) * 100) / 100)
+  const beforeLevel = levelFromXp(s.xp)
+  const xp = Math.max(0, s.xp + result.xpGained)
+  const afterLevel = levelFromXp(xp)
 
   setState({
     stats: addStats(gain),
     bankroll,
+    xp,
     hedgeUntil: 0,
     lastTrade: result,
     tally: {
@@ -555,6 +564,7 @@ function resolveFill(result: TradeResult): void {
 
   showCash(result.pnl)
   showGains(gain)
+  floatText(`+${result.xpGained} XP`, 'credit')
 
   const money = `${formatSigned(result.pnl)} · ${formatCash(bankroll)} left`
   if (result.won) {
@@ -570,6 +580,11 @@ function resolveFill(result: TradeResult): void {
     burst('ember', { count: 12, power: 1.2 })
     emitFx({ type: 'shake', power: 1.2 })
     toast(COPY.loss(), 'bad', money)
+  }
+
+  if (afterLevel > beforeLevel) {
+    toast('Level up', 'good', `Level ${afterLevel}: ${careerStatusForLevel(afterLevel)}`)
+    say(`Level ${afterLevel}. ${careerStatusForLevel(afterLevel)}. He tries not to look pleased.`)
   }
 
   // the desk floats him again rather than ending the game. It costs Rep, which

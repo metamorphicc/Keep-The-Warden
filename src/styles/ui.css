@@ -20,13 +20,13 @@
 }
 
 .panel--wood {
-  background-color: var(--wood);
-  background-image: var(--tex-plank);
+  background-color: #18232c;
+  background-image: none;
 }
 
 .panel--darkwood {
   background-color: var(--stone-deep);
-  background-image: var(--tex-stone);
+  background-image: none;
 }
 
 .panel--stone {
@@ -35,12 +35,8 @@
 }
 
 .panel--ink {
-  background-color: #17100b;
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.03) 0 2px,
-    rgba(0, 0, 0, 0) 2px 4px
-  );
+  background-color: #0b1118;
+  background-image: none;
 }
 
 .panel__head {
@@ -49,13 +45,9 @@
   gap: 6px;
   padding: 5px 8px;
   background-color: #111820;
-  background-image: repeating-linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.25) 0 2px,
-    rgba(0, 0, 0, 0) 2px 6px
-  );
+  background-image: none;
   border-bottom: var(--bd) solid var(--ink);
-  box-shadow: inset 0 2px 0 0 rgba(255, 226, 170, 0.1);
+  box-shadow: inset 0 2px 0 0 rgba(199, 242, 255, 0.1);
 }
 
 .panel__title {
@@ -147,11 +139,7 @@
 
 .ribbon--gold .ribbon__body {
   background-color: var(--stone-deep);
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.07) 0 2px,
-    rgba(0, 0, 0, 0.12) 2px 4px
-  );
+  background-image: none;
   box-shadow:
     inset 0 2px 0 0 var(--stone-lit),
     inset 0 -3px 0 0 var(--spirit-deep);
@@ -376,57 +364,54 @@
 
 /* variants */
 .btn--wood {
-  background-color: var(--stone-dark);
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(104, 201, 255, 0.07) 0 2px,
-    rgba(0, 0, 0, 0.12) 2px 4px
-  );
+  background-color: #18232c;
+  background-image: none;
+  box-shadow:
+    inset 0 2px 0 0 rgba(199, 242, 255, 0.14),
+    inset 0 -3px 0 0 #0b1017,
+    inset 3px 0 0 0 rgba(104, 201, 255, 0.08),
+    0 4px 0 0 var(--ink);
 }
 .btn--gold {
   background-color: #a8761f;
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.1) 0 2px,
-    rgba(0, 0, 0, 0.1) 2px 4px
-  );
+  background-image: none;
   color: #1d1206;
   text-shadow: 1px 1px 0 rgba(255, 235, 190, 0.35);
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 235, 190, 0.24),
+    inset 0 -3px 0 0 #6c4610,
+    0 4px 0 0 var(--ink);
 }
 .btn--gold .btn__sub {
   color: #4a2f0c;
 }
 .btn--ember {
   background-color: var(--ember-deep);
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 155, 61, 0.22) 0 2px,
-    rgba(0, 0, 0, 0.12) 2px 4px
-  );
+  background-image: none;
+  box-shadow:
+    inset 0 2px 0 0 rgba(255, 155, 61, 0.24),
+    inset 0 -3px 0 0 #41150e,
+    0 4px 0 0 var(--ink);
 }
 .btn--teal {
   background-color: var(--teal-deep);
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(111, 189, 174, 0.16) 0 2px,
-    rgba(0, 0, 0, 0.12) 2px 4px
-  );
+  background-image: none;
+  box-shadow:
+    inset 0 2px 0 0 rgba(111, 189, 174, 0.24),
+    inset 0 -3px 0 0 #12362f,
+    0 4px 0 0 var(--ink);
 }
 .btn--danger {
   background-color: var(--blood-deep);
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(169, 56, 44, 0.3) 0 2px,
-    rgba(0, 0, 0, 0.14) 2px 4px
-  );
+  background-image: none;
+  box-shadow:
+    inset 0 2px 0 0 rgba(169, 56, 44, 0.3),
+    inset 0 -3px 0 0 #37100d,
+    0 4px 0 0 var(--ink);
 }
 .btn--ghost {
-  background-color: #1a1512;
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.04) 0 2px,
-    rgba(0, 0, 0, 0) 2px 4px
-  );
+  background-color: #111820;
+  background-image: none;
   color: var(--bone-dim);
 }
 
@@ -458,10 +443,8 @@
   justify-content: center;
   width: 100%;
   aspect-ratio: 1;
-  background-color: var(--stone-dark);
-  background-image:
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0 2px, rgba(0, 0, 0, 0.1) 2px 4px),
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 8px, rgba(0, 0, 0, 0) 8px 16px);
+  background-color: #111820;
+  background-image: none;
   border: var(--bd) solid var(--ink);
   box-shadow:
     inset 0 3px 0 0 rgba(0, 0, 0, 0.55),
@@ -519,13 +502,8 @@
   top: 50%;
   height: 10px;
   margin-top: -5px;
-  background-image: repeating-linear-gradient(
-    90deg,
-    #6e6357 0 4px,
-    #1e1a17 4px 6px,
-    #453d36 6px 10px,
-    #0c0806 10px 12px
-  );
+  background-color: #2c3a45;
+  background-image: none;
   box-shadow:
     inset 0 2px 0 0 rgba(255, 255, 255, 0.12),
     inset 0 -2px 0 0 rgba(0, 0, 0, 0.6);
@@ -559,8 +537,8 @@
   min-width: 15px;
   padding: 0 3px;
   background: var(--ink);
-  border-left: 2px solid var(--wood-lit);
-  border-top: 2px solid var(--wood-lit);
+  border-left: 2px solid var(--spirit-deep);
+  border-top: 2px solid var(--spirit-deep);
   color: var(--bone);
   font-size: 9px;
   line-height: 13px;
@@ -631,11 +609,7 @@
   position: relative;
   padding: 7px 10px;
   background-color: #0d1118;
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.035) 0 2px,
-    rgba(0, 0, 0, 0) 2px 4px
-  );
+  background-image: none;
   border: var(--bd) solid var(--ink);
   box-shadow:
     inset 0 2px 0 0 rgba(255, 235, 190, 0.09),
@@ -753,10 +727,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  background-color: var(--wood-deep);
-  background-image: var(--tex-plank-dark);
+  background-color: #0d141c;
+  background-image: none;
   border-bottom: var(--bd) solid var(--ink);
-  box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0.45);
+  box-shadow:
+    inset 0 2px 0 0 rgba(199, 242, 255, 0.08),
+    inset 0 -3px 0 0 rgba(0, 0, 0, 0.52);
   flex: 0 0 auto;
 }
 
@@ -767,11 +743,11 @@
   width: 38px;
   height: 38px;
   flex: 0 0 38px;
-  background-color: var(--wood);
-  background-image: var(--tex-plank);
+  background-color: #18232c;
+  background-image: none;
   border: var(--bd) solid var(--ink);
   box-shadow:
-    inset 0 2px 0 0 rgba(255, 235, 190, 0.16),
+    inset 0 2px 0 0 rgba(199, 242, 255, 0.16),
     inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
     0 3px 0 0 var(--ink);
 }
@@ -815,8 +791,8 @@
   gap: 0;
   width: 100%;
   max-width: 300px;
-  background-color: var(--wood-dark);
-  background-image: var(--tex-plank);
+  background-color: #111820;
+  background-image: none;
   border: var(--bd) solid var(--ink);
   box-shadow:
     inset 0 2px 0 0 rgba(255, 235, 190, 0.14),

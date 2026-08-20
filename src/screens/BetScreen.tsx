@@ -263,6 +263,11 @@ export function BetScreen() {
                 <span>{WORLD.cashName}</span>
                 <b>{formatCash(s.bankroll)}</b>
               </li>
+              <li className="is-up">
+                <PixelIcon name="star" size={12} />
+                <span>XP</span>
+                <b>+{trade.xpGained}</b>
+              </li>
               {trade.hedged ? (
                 <li>
                   <PixelIcon name="brush" size={12} />

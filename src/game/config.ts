@@ -27,7 +27,7 @@ export const GAME_VERSION = '2.0.0'
 export const SAVE_KEY_PREFIX = 'ktw.save.v1:'
 export const SAVE_KEY_LEGACY = 'ktw.save.v1'
 export const CLOUD_SAVE_KEY = 'ktw_save_v1'
-export const SAVE_VERSION = 5
+export const SAVE_VERSION = 6
 
 /** Longest name the player may give him. */
 export const NAME_MAX = 18
@@ -367,6 +367,63 @@ export const BET = {
 }
 
 /* ==========================================================================
+   Career progression
+   ========================================================================== */
+
+export const LEVEL_MAX = 30
+export const XP = {
+  win: 100,
+  loss: 20,
+}
+
+export const CAREER_MILESTONES = [
+  { min: 1, title: 'Beginner' },
+  { min: 6, title: 'Amateur' },
+  { min: 11, title: 'Research Intern' },
+  { min: 16, title: 'Junior Quant' },
+  { min: 21, title: 'Desk Trader' },
+  { min: 26, title: 'Quant Trader' },
+] as const
+
+export function xpForLevel(level: number): number {
+  if (level <= 1) return 0
+  if (level > LEVEL_MAX) return xpForLevel(LEVEL_MAX)
+  return Math.floor(70 * Math.pow(level - 1, 1.45))
+}
+
+export function levelFromXp(xp: number): number {
+  const safeXp = Math.max(0, Math.floor(xp))
+  for (let level = LEVEL_MAX; level >= 1; level--) {
+    if (safeXp >= xpForLevel(level)) return level
+  }
+  return 1
+}
+
+export function careerStatusForLevel(level: number): string {
+  const safeLevel = Math.max(1, Math.min(LEVEL_MAX, Math.floor(level)))
+  let status: string = CAREER_MILESTONES[0].title
+  for (const milestone of CAREER_MILESTONES) {
+    if (safeLevel >= milestone.min) status = milestone.title
+  }
+  return status
+}
+
+export function xpProgress(xp: number): { level: number; current: number; needed: number; pct: number } {
+  const level = levelFromXp(xp)
+  const floor = xpForLevel(level)
+  const next = level >= LEVEL_MAX ? floor : xpForLevel(level + 1)
+  const span = Math.max(1, next - floor)
+  const current = level >= LEVEL_MAX ? span : Math.max(0, Math.floor(xp) - floor)
+  const needed = level >= LEVEL_MAX ? span : span
+  return {
+    level,
+    current,
+    needed,
+    pct: level >= LEVEL_MAX ? 100 : Math.min(100, Math.round((current / needed) * 100)),
+  }
+}
+
+/* ==========================================================================
    Notes and signals — the "research" stash. Consumed one at a time.
    ========================================================================== */
 
@@ -582,6 +639,7 @@ export function freshSave(now: number): SaveData {
     name: WORLD.hero,
     stats: { edge: 40, focus: 62, heat: 18, rep: 8 },
     bankroll: START_BANKROLL,
+    xp: 0,
     peakBankroll: START_BANKROLL,
     credits: 2,
     stash: { primer: 2, coffee: 1 },

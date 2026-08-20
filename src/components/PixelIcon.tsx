@@ -95,14 +95,14 @@ const ART = {
   ],
   // ---- currency ----------------------------------------------------------
   coin: [
-    '..kkkk..',
-    '.kGGGGk.',
-    'kGGgGGGk',
-    'kGgGgGGk',
-    'kGgGgGGk',
-    'kGGgGGGk',
-    '.kGGGGk.',
-    '..kkkk..',
+    'kkkkkkkk',
+    'kMMMMMMk',
+    'kMMbMMMk',
+    'kMbMMbMk',
+    'kMMMbMMk',
+    'kMMbMMMk',
+    'kMMMMMMk',
+    'kkkkkkkk',
   ],
   shard: [
     '...c....',
