@@ -125,11 +125,11 @@ export function RoomScreen() {
         <nav className="room__nav">
           <button type="button" className="navbtn" onClick={() => setScreen('shop')}>
             <PixelIcon name="bag" size={14} />
-            <span>Supply</span>
+            <span>Desk</span>
           </button>
           <button type="button" className="navbtn" onClick={() => setScreen('rig')}>
             <PixelIcon name="helm" size={14} />
-            <span>Rig</span>
+            <span>Setup</span>
           </button>
           <button type="button" className="navbtn" onClick={() => setScreen('profile')}>
             <PixelIcon name="warden" size={14} />

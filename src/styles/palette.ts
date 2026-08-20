@@ -5,50 +5,50 @@
  * same hex codes as CSS custom properties for the DOM/UI layer. If you change a
  * colour here, change it there too.
  *
- * Mood: cozy-dark dungeon interior. Deep browns, gold, ember orange, muted
- * teal, bone-white text. No pastels, no glossy highlights.
+ * Mood: late-night trader apartment. Charcoal walls, walnut desk, paper-note
+ * amber, hot-risk red, monitor teal/cyan, warm off-white text.
  */
 export const P = {
   // --- darks / outlines -----------------------------------------------------
-  ink: '#0c0806',
-  ink2: '#150d09',
-  shadow: '#1b110b',
+  ink: '#070a0f',
+  ink2: '#0d1118',
+  shadow: '#141823',
 
   // --- wood ----------------------------------------------------------------
-  woodDeep: '#241610',
-  woodDark: '#33200f',
-  wood: '#4a2f1e',
-  woodLit: '#6b4429',
-  woodHi: '#8a5a35',
+  woodDeep: '#1c1511',
+  woodDark: '#2c2119',
+  wood: '#4d392b',
+  woodLit: '#72523a',
+  woodHi: '#9a704a',
 
   // --- stone ---------------------------------------------------------------
-  stoneDeep: '#1e1a17',
-  stoneDark: '#2b2622',
-  stone: '#453d36',
-  stoneLit: '#5d5349',
-  stoneHi: '#7a6e60',
+  stoneDeep: '#111820',
+  stoneDark: '#1b2530',
+  stone: '#2b3743',
+  stoneLit: '#43515f',
+  stoneHi: '#687887',
 
   // --- gold ----------------------------------------------------------------
-  goldDark: '#8a6018',
-  gold: '#d9a132',
-  goldLit: '#f2cf6a',
+  goldDark: '#8a671f',
+  gold: '#d8ac3f',
+  goldLit: '#ffe087',
 
   // --- ember / fire --------------------------------------------------------
-  emberDeep: '#8c3211',
-  ember: '#e2622a',
-  emberLit: '#ff9b3d',
-  emberPale: '#ffd18a',
+  emberDeep: '#7d211d',
+  ember: '#d84a3a',
+  emberLit: '#ff7d56',
+  emberPale: '#ffb38a',
 
   // --- teal ----------------------------------------------------------------
-  tealDeep: '#16332f',
-  teal: '#3f8a80',
-  tealLit: '#6fbdae',
+  tealDeep: '#102f35',
+  teal: '#2f8b91',
+  tealLit: '#62c7c8',
 
   // --- spirit (blue energy) ------------------------------------------------
-  spiritDeep: '#1c4a63',
-  spirit: '#4aa8d8',
-  spiritLit: '#6fd3e8',
-  spiritPale: '#c8f4ff',
+  spiritDeep: '#15365e',
+  spirit: '#367ec9',
+  spiritLit: '#68c9ff',
+  spiritPale: '#c7f2ff',
 
   // --- bone / text ---------------------------------------------------------
   bone: '#e8dfc8',
@@ -57,9 +57,9 @@ export const P = {
   white: '#fffaf0',
 
   // --- blood / banners -----------------------------------------------------
-  bloodDeep: '#4a1714',
-  blood: '#7d2b24',
-  bloodLit: '#a9382c',
+  bloodDeep: '#4a1e27',
+  blood: '#803142',
+  bloodLit: '#b34c62',
 
   // --- armour plate --------------------------------------------------------
   plateDeep: '#171a22',

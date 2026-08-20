@@ -78,7 +78,7 @@ export function BootScreen() {
         <p className="t-body t-center boot__line">{line}</p>
 
         <PixelButton
-          label={visits > 1 ? 'Back to the Pit' : 'Take the Desk'}
+          label={visits > 1 ? 'Back to the Desk' : 'Take the Desk'}
           icon="torch"
           variant="gold"
           size="lg"

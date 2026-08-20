@@ -13,8 +13,8 @@ import type { IconName } from '../components/PixelIcon'
 /* ==========================================================================
    World
 
-   A paper-trading sim. No real money, no real book, no wallet. The old warden
-   kept a door; now he keeps a position.
+   A paper-trading sim. No real money, no real book, no wallet. One room, one
+   desk, one old trader keeping the book alive.
    ========================================================================== */
 
 export const GAME_VERSION = '2.0.0'
@@ -53,7 +53,7 @@ export const WORLD = {
   title: 'Quantum Pit',
   subtitle: 'Polymarket trader simulator',
   /** the main room */
-  hall: 'The Pit',
+  hall: 'The Desk',
   /** the settings screen */
   keep: 'The Back Office',
   hero: 'Old Halvard',
@@ -170,7 +170,7 @@ export const ACTIONS: Record<string, ActionDef> = {
   },
   recover: {
     id: 'recover',
-    label: 'Recover',
+    label: 'Break',
     icon: 'bed',
     gain: { focus: 36, heat: -22, edge: -3 },
     cooldown: 40_000,
@@ -193,7 +193,7 @@ export const ACTIONS: Record<string, ActionDef> = {
   },
   scan: {
     id: 'scan',
-    label: 'Scan',
+    label: 'Board',
     icon: 'dice',
     opens: 'scan',
     requires: {
@@ -204,7 +204,7 @@ export const ACTIONS: Record<string, ActionDef> = {
   },
   bet: {
     id: 'bet',
-    label: 'Sim Bet',
+    label: 'Ticket',
     icon: 'terminal',
     opens: 'bet',
     requires: {
@@ -215,7 +215,7 @@ export const ACTIONS: Record<string, ActionDef> = {
   },
 }
 
-/** Order of the big action buttons in the pit. */
+/** Order of the big action buttons at the desk. */
 export const ACTION_BAR: string[] = ['research', 'hedge', 'recover', 'scan', 'bet']
 
 /**

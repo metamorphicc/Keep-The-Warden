@@ -12,8 +12,8 @@
   position: relative;
   border: var(--bd) solid var(--ink);
   box-shadow:
-    inset 0 2px 0 0 rgba(255, 226, 170, 0.13),
-    inset 2px 0 0 0 rgba(255, 226, 170, 0.06),
+    inset 0 2px 0 0 rgba(199, 242, 255, 0.1),
+    inset 2px 0 0 0 rgba(255, 224, 135, 0.05),
     inset -2px 0 0 0 rgba(0, 0, 0, 0.4),
     inset 0 -3px 0 0 rgba(0, 0, 0, 0.5),
     0 4px 0 0 rgba(0, 0, 0, 0.55);
@@ -25,8 +25,8 @@
 }
 
 .panel--darkwood {
-  background-color: var(--wood-dark);
-  background-image: var(--tex-plank-dark);
+  background-color: var(--stone-deep);
+  background-image: var(--tex-stone);
 }
 
 .panel--stone {
@@ -48,7 +48,7 @@
   align-items: center;
   gap: 6px;
   padding: 5px 8px;
-  background-color: var(--wood-deep);
+  background-color: #111820;
   background-image: repeating-linear-gradient(
     90deg,
     rgba(0, 0, 0, 0.25) 0 2px,
@@ -60,7 +60,7 @@
 
 .panel__title {
   font-size: 9px;
-  color: var(--gold-lit);
+  color: var(--spirit-pale);
   text-shadow: 1px 1px 0 var(--ink);
   flex: 1;
   min-width: 0;
@@ -91,10 +91,10 @@
   position: absolute;
   width: 6px;
   height: 6px;
-  background: var(--gold);
+  background: var(--stone-hi);
   box-shadow:
-    inset -2px -2px 0 0 var(--gold-dark),
-    inset 2px 2px 0 0 var(--gold-lit),
+    inset -2px -2px 0 0 var(--stone-deep),
+    inset 2px 2px 0 0 var(--spirit-pale),
     0 0 0 1px var(--ink);
   z-index: 2;
 }
@@ -146,19 +146,19 @@
 }
 
 .ribbon--gold .ribbon__body {
-  background-color: var(--blood);
+  background-color: var(--stone-deep);
   background-image: repeating-linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.07) 0 2px,
     rgba(0, 0, 0, 0.12) 2px 4px
   );
   box-shadow:
-    inset 0 2px 0 0 var(--blood-lit),
-    inset 0 -3px 0 0 var(--blood-deep);
-  color: var(--gold-lit);
+    inset 0 2px 0 0 var(--stone-lit),
+    inset 0 -3px 0 0 var(--spirit-deep);
+  color: var(--spirit-pale);
 }
 .ribbon--gold .ribbon__tail {
-  background: var(--blood-deep);
+  background: var(--spirit-deep);
   box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -290,7 +290,7 @@
   letter-spacing: 0.06em;
   text-shadow: 1px 1px 0 var(--ink);
   box-shadow:
-    inset 0 2px 0 0 rgba(255, 235, 190, 0.18),
+    inset 0 2px 0 0 rgba(199, 242, 255, 0.13),
     inset 0 -3px 0 0 rgba(0, 0, 0, 0.45),
     0 4px 0 0 var(--ink);
   transform: translateY(0);
@@ -376,8 +376,12 @@
 
 /* variants */
 .btn--wood {
-  background-color: var(--wood);
-  background-image: var(--tex-plank);
+  background-color: var(--stone-dark);
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(104, 201, 255, 0.07) 0 2px,
+    rgba(0, 0, 0, 0.12) 2px 4px
+  );
 }
 .btn--gold {
   background-color: #a8761f;
@@ -600,7 +604,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 6px;
-  background: #17100b;
+  background: #0d1118;
   border: 2px solid var(--ink);
   box-shadow:
     inset 0 2px 0 0 rgba(255, 235, 190, 0.08),
@@ -626,7 +630,7 @@
 .speech {
   position: relative;
   padding: 7px 10px;
-  background-color: #150f0a;
+  background-color: #0d1118;
   background-image: repeating-linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.035) 0 2px,
@@ -636,7 +640,7 @@
   box-shadow:
     inset 0 2px 0 0 rgba(255, 235, 190, 0.09),
     inset 0 -3px 0 0 rgba(0, 0, 0, 0.5),
-    inset 3px 0 0 0 var(--gold-dark);
+    inset 3px 0 0 0 var(--spirit-deep);
   min-height: 44px;
   display: flex;
   align-items: center;
@@ -648,7 +652,7 @@
   left: 22px;
   width: 12px;
   height: 6px;
-  background: #150f0a;
+  background: #0d1118;
   border: var(--bd) solid var(--ink);
   border-bottom: 0;
   clip-path: polygon(0 100%, 30% 0, 70% 0, 100% 100%);

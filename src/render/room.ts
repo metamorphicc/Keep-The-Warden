@@ -1,60 +1,40 @@
 import { P } from '../styles/palette'
-import { dither, drawMatrix, lightPool, noise2, outline, px, pxa, pxLine, type Ctx } from './draw'
+import { dither, lightPool, noise2, outline, px, pxa, pxLine, type Ctx } from './draw'
 
 /* ==========================================================================
-   The Quantum Pit — a single low-resolution trading hall, drawn procedurally.
+   The Desk - a single low-resolution trader apartment, drawn procedurally.
    Static geometry is rendered once into an offscreen canvas and blitted every
-   frame; only fire, light flicker, the terminal glow and props animate.
+   frame; only monitor glow, city lights, coffee steam and status LEDs animate.
 
-   Same room the old warden kept. The pot is coffee now and there is a small
-   green screen on the shelf. Nothing else moved.
+   Internal hotspot names are intentionally preserved so tap behavior and the
+   rest of the game do not move while the visual scene changes.
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   Geometry.
-
-   The hall itself is authored in a 192x208 "room space". The canvas is taller
-   than that: a dark rafter void sits above the ceiling beam and a strip of
-   foreground floor sits below, so the scene fills a tall phone stage without
-   ever being scaled by a fraction. Room-space drawing happens inside a
-   translate(0, VOID_H); everything the outside world touches (SCENE, HOTSPOTS)
-   is already in canvas space.
-   -------------------------------------------------------------------------- */
-
 const R = { w: 192, h: 208, floorY: 152 } as const
-/** unlit rafter space above the ceiling beam */
 const VOID_H = 56
-/** floor in front of the hall, closest to the viewer */
 const FORE_H = 24
 
 export const SCENE = {
   w: R.w,
   h: VOID_H + R.h + FORE_H,
-  /** top of the stone floor */
   floorY: VOID_H + R.floorY,
-  /** the warden's feet */
   heroX: 96,
   heroY: VOID_H + 182,
 } as const
 
-/** Tappable props in the room, in scene coordinates. */
 export const HOTSPOTS = {
   hero: { x: 74, y: VOID_H + 118, w: 44, h: 66 },
-  /** the pot on the tripod — coffee now, and it has been on a long time */
   urn: { x: 144, y: VOID_H + 142, w: 42, h: 38 },
-  /** the little green screen on the shelf */
-  terminal: { x: 126, y: VOID_H + 90, w: 30, h: 22 },
-  bed: { x: 4, y: VOID_H + 152, w: 48, h: 28 },
-  torchL: { x: 18, y: VOID_H + 68, w: 20, h: 30 },
-  torchR: { x: 154, y: VOID_H + 68, w: 20, h: 30 },
-  door: { x: 68, y: VOID_H + 46, w: 56, h: 92 },
+  terminal: { x: 26, y: VOID_H + 58, w: 140, h: 70 },
+  bed: { x: 4, y: VOID_H + 148, w: 50, h: 34 },
+  torchL: { x: 12, y: VOID_H + 62, w: 20, h: 42 },
+  torchR: { x: 160, y: VOID_H + 62, w: 20, h: 42 },
+  door: { x: 50, y: VOID_H + 28, w: 92, h: 88 },
 } as const
-
 
 export type HotspotName = keyof typeof HOTSPOTS
 
 export function hitTest(x: number, y: number): HotspotName | null {
-  // hero first: he stands in front of everything
   const order: HotspotName[] = ['hero', 'urn', 'terminal', 'bed', 'torchL', 'torchR', 'door']
   for (const name of order) {
     const h = HOTSPOTS[name]
@@ -63,539 +43,346 @@ export function hitTest(x: number, y: number): HotspotName | null {
   return null
 }
 
-/* --------------------------------------------------------------------------
-   Fire
-   -------------------------------------------------------------------------- */
+const MONITORS = [
+  { x: 35, y: 74, w: 40, h: 28, hue: P.tealLit },
+  { x: 76, y: 62, w: 42, h: 36, hue: P.spiritLit },
+  { x: 119, y: 76, w: 38, h: 26, hue: P.tealLit },
+] as const
 
-const FIRE_CHARS: Record<string, string> = {
-  a: P.emberDeep,
-  b: P.ember,
-  c: P.emberLit,
-  d: P.emberPale,
-}
-
-const FLAME_FRAMES: readonly string[][] = [
-  [
-    '...d...',
-    '..dcd..',
-    '..ccd..',
-    '.bcccb.',
-    '.bcccb.',
-    'abcccba',
-    'abbbbba',
-    '.abbba.',
-    '..aaa..',
-  ],
-  [
-    '..d....',
-    '..dcd..',
-    '.dccd..',
-    '.bccdb.',
-    'abcccb.',
-    'abccbba',
-    'abbbbba',
-    '.aabba.',
-    '..aaa..',
-  ],
-  [
-    '....d..',
-    '..dcd..',
-    '..dccd.',
-    '.bdccb.',
-    '.bcccba',
-    'abbcccb',
-    'abbbbba',
-    '.abaaa.',
-    '..aaa..',
-  ],
-]
-
-function flame(ctx: Ctx, x: number, y: number, t: number, seed: number): void {
-  const idx = Math.floor(t / 110 + seed * 3) % FLAME_FRAMES.length
-  drawMatrix(ctx, FLAME_FRAMES[idx]!, x, y, FIRE_CHARS, seed > 0.5)
-}
+const LEDS = [
+  { x: 22, y: 82 },
+  { x: 170, y: 82 },
+] as const
 
 /* --------------------------------------------------------------------------
-   Static geometry
+   Static apartment shell
    -------------------------------------------------------------------------- */
 
-function drawCeiling(ctx: Ctx): void {
-  px(ctx, 0, 0, R.w, 16, '#100a07')
-  // main beam
-  px(ctx, 0, 10, R.w, 8, P.woodDeep)
-  px(ctx, 0, 10, R.w, 2, P.woodDark)
-  px(ctx, 0, 16, R.w, 2, P.ink)
-  for (let x = 6; x < R.w; x += 24) {
-    px(ctx, x, 12, 2, 2, P.goldDark)
-    px(ctx, x + 1, 12, 1, 1, P.gold)
+function drawCeilingVoid(ctx: Ctx): void {
+  px(ctx, 0, 0, R.w, VOID_H, '#05080d')
+
+  for (let y = 0; y < VOID_H; y += 8) {
+    const c = y < 24 ? '#080c12' : '#0b1119'
+    px(ctx, 0, y, R.w, 7, c)
+    px(ctx, 0, y + 7, R.w, 1, '#030509')
+  }
+
+  // cable tray above the workstation
+  px(ctx, 26, 22, 140, 5, P.plateDeep)
+  px(ctx, 26, 22, 140, 1, P.plateLit)
+  for (let x = 32; x < 164; x += 13) {
+    px(ctx, x, 22, 2, 5, P.plate)
+  }
+
+  // two quiet status bars, not flames
+  for (const l of LEDS) {
+    px(ctx, l.x - 7, 36, 16, 4, P.plateDeep)
+    px(ctx, l.x - 7, 36, 16, 1, P.plateLit)
+    px(ctx, l.x - 4, 40, 10, 1, P.ink)
+  }
+
+  for (let i = 0; i < 5; i++) {
+    dither(ctx, 0, 0, R.w, 8 + i * 4, '#000000', 1, 0.12)
   }
 }
 
 function drawWall(ctx: Ctx): void {
-  const top = 18
-  const bottom = 138
-  px(ctx, 0, top, R.w, bottom - top, P.woodDark)
+  const top = 16
+  const bottom = 140
+  px(ctx, 0, top, R.w, bottom - top, '#151d26')
 
-  // vertical boards
   for (let i = 0; i * 16 < R.w; i++) {
     const x = i * 16
-    const shade = noise2(i, 3)
-    const base = shade > 0.62 ? '#3d2517' : shade > 0.3 ? P.woodDark : '#2e1c0e'
+    const shade = noise2(i, 4)
+    const base = shade > 0.62 ? '#1b2630' : shade > 0.3 ? '#17212b' : '#121a23'
     px(ctx, x, top, 16, bottom - top, base)
-    // seam + edge highlight
-    px(ctx, x, top, 1, bottom - top, '#1c1109')
-    px(ctx, x + 1, top, 1, bottom - top, '#4a2f1e')
-    px(ctx, x + 15, top, 1, bottom - top, '#150d07')
-    // grain
-    for (let y = top + 3; y < bottom; y += 7) {
-      const n = noise2(i * 7 + y, y)
-      if (n > 0.55) px(ctx, x + 3 + Math.floor(n * 9), y, 2, 1, '#241509')
-      else if (n < 0.16) px(ctx, x + 4 + Math.floor(n * 20), y + 2, 3, 1, '#40281a')
-    }
+    px(ctx, x, top, 1, bottom - top, '#0a0f15')
+    px(ctx, x + 15, top, 1, bottom - top, '#0d1218')
+    if (i % 3 === 0) pxa(ctx, x + 4, top + 8, 8, bottom - top - 18, '#ffffff', 0.025)
   }
 
-  // cross rail
-  px(ctx, 0, 96, R.w, 8, P.wood)
-  px(ctx, 0, 96, R.w, 2, P.woodLit)
-  px(ctx, 0, 102, R.w, 2, '#1c1109')
-  for (let x = 4; x < R.w; x += 16) {
-    px(ctx, x, 98, 2, 2, P.stoneHi)
-    px(ctx, x, 98, 1, 1, '#9c9082')
-  }
+  // lower acoustic strip
+  px(ctx, 0, 102, R.w, 8, '#101720')
+  px(ctx, 0, 102, R.w, 1, P.plateLit)
+  px(ctx, 0, 109, R.w, 1, P.ink)
+  for (let x = 5; x < R.w; x += 18) px(ctx, x, 105, 4, 2, '#263340')
 
-  // top gloom
-  for (let y = top; y < top + 30; y++) {
-    pxa(ctx, 0, y, R.w, 1, '#000000', 0.5 * (1 - (y - top) / 30))
+  // top shadow from the ceiling void
+  for (let y = top; y < top + 28; y++) {
+    pxa(ctx, 0, y, R.w, 1, '#000000', 0.46 * (1 - (y - top) / 28))
   }
 }
 
-function drawSkirting(ctx: Ctx): void {
-  const y = 138
-  px(ctx, 0, y, R.w, 14, P.stoneDark)
-  px(ctx, 0, y, R.w, 2, P.ink)
-  // blocks
-  for (let i = 0; i * 24 < R.w; i++) {
-    const x = i * 24
-    const n = noise2(i, 11)
-    px(ctx, x + 1, y + 3, 22, 9, n > 0.5 ? P.stone : '#3d362f')
-    px(ctx, x + 1, y + 3, 22, 1, P.stoneLit)
-    px(ctx, x, y + 3, 1, 9, P.stoneDeep)
-    if (n > 0.75) px(ctx, x + 6, y + 7, 4, 1, P.stoneDeep)
-  }
-  px(ctx, 0, y + 12, R.w, 2, P.ink)
-}
+function drawCityWindow(ctx: Ctx): void {
+  const x = 51
+  const y = 28
+  const w = 90
+  const h = 80
 
-function drawArchAndDoor(ctx: Ctx): void {
-  const dx = 68
-  const dw = 56
-  const dTop = 46
-  const dBottom = 138
+  outline(ctx, x - 3, y - 3, w + 6, h + 6, P.ink, 2)
+  px(ctx, x - 1, y - 1, w + 2, h + 2, P.plateDark)
+  px(ctx, x, y, w, h, '#07111f')
 
-  // --- stone arch surround ---
-  outline(ctx, dx - 8, dTop - 8, dw + 16, dBottom - dTop + 8, P.ink, 1)
-  for (let i = 0; i < 4; i++) {
-    // side pillars
-    for (let y = dTop - 8; y < dBottom; y += 12) {
-      const n = noise2(i * 3, y)
-      const c = n > 0.5 ? P.stone : P.stoneDark
-      px(ctx, dx - 8, y, 8, 11, c)
-      px(ctx, dx + dw, y, 8, 11, c)
-      px(ctx, dx - 8, y, 8, 1, P.stoneLit)
-      px(ctx, dx + dw, y, 8, 1, P.stoneLit)
-      px(ctx, dx - 8, y + 11, 8, 1, P.stoneDeep)
-      px(ctx, dx + dw, y + 11, 8, 1, P.stoneDeep)
-    }
-  }
-  // lintel keystones
-  for (let i = 0; i < 6; i++) {
-    const x = dx - 8 + i * 12
-    px(ctx, x, dTop - 8, 11, 8, i === 2 || i === 3 ? P.stoneLit : P.stone)
-    px(ctx, x, dTop - 8, 11, 1, P.stoneHi)
-    px(ctx, x + 11, dTop - 8, 1, 8, P.stoneDeep)
-  }
-  // keystone sigil
-  px(ctx, dx + dw / 2 - 3, dTop - 6, 6, 4, P.goldDark)
-  px(ctx, dx + dw / 2 - 2, dTop - 5, 4, 2, P.gold)
-
-  // --- door recess ---
-  px(ctx, dx, dTop, dw, dBottom - dTop, '#0d0805')
-
-  // --- two carved leaves ---
-  for (let leaf = 0; leaf < 2; leaf++) {
-    const lx = dx + 2 + leaf * 27
-    const lw = 25
-    px(ctx, lx, dTop + 2, lw, dBottom - dTop - 2, P.woodDeep)
-    // planks
-    for (let i = 0; i < 4; i++) {
-      const bx = lx + 1 + i * 6
-      px(ctx, bx, dTop + 3, 5, dBottom - dTop - 5, i % 2 ? '#2a1a0f' : '#332012')
-      px(ctx, bx + 5, dTop + 3, 1, dBottom - dTop - 5, '#120b06')
-    }
-    // iron bands
-    for (const by of [dTop + 12, dBottom - 26]) {
-      px(ctx, lx, by, lw, 5, P.plateDark)
-      px(ctx, lx, by, lw, 1, P.plate)
-      px(ctx, lx, by + 4, lw, 1, '#0d0f14')
-      px(ctx, lx + 3, by + 1, 2, 2, P.stoneHi)
-      px(ctx, lx + lw - 6, by + 1, 2, 2, P.stoneHi)
-    }
-    // ring handle
-    const hx = leaf === 0 ? lx + lw - 6 : lx + 2
-    outline(ctx, hx, dTop + 44, 5, 6, P.plateLit, 1)
-    px(ctx, hx + 1, dTop + 42, 3, 2, P.plateDark)
+  // glass depth
+  for (let j = 0; j < h; j++) {
+    const c = j < 22 ? '#0a1830' : j < 52 ? '#081425' : '#07101c'
+    px(ctx, x, y + j, w, 1, c)
   }
 
-  // --- carved rune between the leaves ---
-  const cx = dx + dw / 2
-  px(ctx, cx - 1, dTop + 26, 2, 22, P.goldDark)
-  pxLine(ctx, cx - 6, dTop + 34, cx - 1, dTop + 28, P.goldDark, 2)
-  pxLine(ctx, cx + 6, dTop + 34, cx + 1, dTop + 28, P.goldDark, 2)
-  px(ctx, cx - 1, dTop + 30, 2, 4, P.gold)
-
-  // door frame shadow + threshold glow from whatever waits below
-  px(ctx, dx, dTop, dw, 2, P.ink)
-  px(ctx, dx, dBottom - 3, dw, 3, '#07100f')
-  pxa(ctx, dx + 4, dBottom - 4, dw - 8, 2, P.spirit, 0.35)
-  pxa(ctx, dx + 12, dBottom - 5, dw - 24, 1, P.spiritLit, 0.25)
-}
-
-function drawBanner(ctx: Ctx, x: number, y: number, h: number): void {
-  const w = 18
-  // rod
-  px(ctx, x - 2, y, w + 4, 3, P.plateDark)
-  px(ctx, x - 2, y, w + 4, 1, P.plateLit)
-  // cloth
-  px(ctx, x, y + 3, w, h, P.blood)
-  px(ctx, x, y + 3, 2, h, P.bloodDeep)
-  px(ctx, x + w - 2, y + 3, 2, h, P.bloodDeep)
-  for (let i = 0; i < h; i += 6) {
-    pxa(ctx, x + 2, y + 3 + i, w - 4, 1, '#ffffff', 0.05)
+  // mullions and blinds
+  px(ctx, x + 43, y, 3, h, P.plateDark)
+  px(ctx, x, y + 31, w, 2, P.plateDark)
+  for (let by = y + 8; by < y + 62; by += 13) {
+    pxa(ctx, x + 3, by, w - 6, 1, P.spiritPale, 0.12)
   }
-  // gold trim
-  px(ctx, x, y + 3, w, 1, P.gold)
-  px(ctx, x + 1, y + 5, w - 2, 1, P.goldDark)
-  // sigil: a sword driven point-down — the warden's mark
-  const cx = x + w / 2
-  px(ctx, cx - 2, y + 11, 4, 3, P.gold)
-  px(ctx, cx - 2, y + 11, 4, 1, P.goldLit)
-  px(ctx, cx - 1, y + 14, 2, 4, P.goldDark)
-  px(ctx, cx - 6, y + 18, 12, 2, P.gold)
-  px(ctx, cx - 6, y + 18, 12, 1, P.goldLit)
-  px(ctx, cx - 2, y + 20, 4, 16, P.bone)
-  px(ctx, cx - 2, y + 20, 1, 16, P.boneDim)
-  px(ctx, cx - 1, y + 36, 2, 4, P.bone)
-  px(ctx, cx, y + 40, 1, 2, P.boneDim)
-  // ragged bottom
-  const by = y + 3 + h
-  px(ctx, x, by, w, 2, P.bloodDeep)
-  for (let i = 0; i < w; i += 6) {
-    px(ctx, x + i, by + 2, 3, 3, P.bloodDeep)
-    px(ctx, x + i + 1, by + 5, 1, 2, P.bloodDeep)
-  }
-}
 
-function drawTorchBracket(ctx: Ctx, x: number, y: number): void {
-  // iron bracket on the wall
-  px(ctx, x - 4, y + 10, 9, 3, P.plateDark)
-  px(ctx, x - 4, y + 10, 9, 1, P.plate)
-  px(ctx, x - 1, y + 12, 3, 6, P.plateDark)
-  px(ctx, x - 5, y + 4, 2, 8, P.plateDark)
-  px(ctx, x + 4, y + 4, 2, 8, P.plateDark)
-  // wooden shaft + wrapping
-  px(ctx, x - 2, y, 5, 12, P.woodDark)
-  px(ctx, x - 2, y, 1, 12, P.wood)
-  px(ctx, x - 2, y + 3, 5, 2, P.woodLit)
-  px(ctx, x - 2, y + 8, 5, 2, P.woodLit)
-  // coals
-  px(ctx, x - 3, y - 2, 7, 3, P.emberDeep)
-  px(ctx, x - 2, y - 2, 5, 1, P.ember)
-}
-
-function drawWeaponRack(ctx: Ctx): void {
-  const x = 38
-  const y = 106
-  px(ctx, x, y, 26, 3, P.wood)
-  px(ctx, x, y, 26, 1, P.woodLit)
-  px(ctx, x, y + 3, 26, 1, P.ink)
-  px(ctx, x, y + 26, 26, 3, P.wood)
-  px(ctx, x, y + 26, 26, 1, P.woodLit)
-  // three blades hanging
-  for (let i = 0; i < 3; i++) {
+  // skyline
+  for (let i = 0; i < 11; i++) {
+    const bw = 5 + Math.floor(noise2(i, 20) * 8)
+    const bh = 18 + Math.floor(noise2(i, 26) * 26)
     const bx = x + 4 + i * 8
-    px(ctx, bx, y + 3, 2, 20, i === 1 ? P.stoneHi : P.stoneLit)
-    px(ctx, bx, y + 3, 1, 20, P.bone)
-    px(ctx, bx - 2, y + 22, 6, 2, P.goldDark)
-    px(ctx, bx, y + 24, 2, 3, P.woodDark)
+    const by = y + h - bh - 4
+    px(ctx, bx, by, bw, bh, noise2(i, 33) > 0.5 ? '#0d2132' : '#0a1a29')
+    px(ctx, bx, by, bw, 1, '#17314a')
+    for (let wy = by + 4; wy < y + h - 6; wy += 7) {
+      if (noise2(i * 7, wy) > 0.42) px(ctx, bx + 2, wy, Math.max(1, bw - 4), 1, '#8ab5ce')
+    }
   }
+
+  // sill ready for later upgrades
+  px(ctx, x - 7, y + h + 2, w + 14, 6, P.stoneDark)
+  px(ctx, x - 7, y + h + 2, w + 14, 1, P.stoneHi)
+  px(ctx, x + 5, y + h + 5, w - 10, 1, P.ink)
 }
 
-function drawShelf(ctx: Ctx): void {
-  const x = 128
-  const y = 108
-  px(ctx, x, y, 26, 3, P.wood)
-  px(ctx, x, y, 26, 1, P.woodLit)
-  px(ctx, x, y + 3, 26, 1, P.ink)
-  px(ctx, x + 2, y + 3, 2, 3, P.woodDeep)
-  px(ctx, x + 22, y + 3, 2, 3, P.woodDeep)
+function drawSideLight(ctx: Ctx, x: number, y: number, flip = false): void {
+  outline(ctx, x - 4, y - 4, 22, 42, P.ink, 1)
+  px(ctx, x - 3, y - 3, 20, 40, '#0a121b')
+  for (let i = 0; i < 5; i++) {
+    const yy = y + i * 7
+    px(ctx, x, yy, 14, 3, i % 2 ? P.spiritDeep : P.tealDeep)
+    pxa(ctx, x + (flip ? 2 : 8), yy, 4, 3, P.spiritLit, 0.32)
+  }
+  px(ctx, x + 3, y + 36, 8, 2, P.plate)
 }
 
-/** Terminal position in room space — the animated glow reuses these. */
-const TERM = { x: 132, y: 93, w: 20, h: 15 } as const
+function drawNotesBoard(ctx: Ctx): void {
+  const x = 9
+  const y = 36
+  outline(ctx, x, y, 32, 55, P.ink, 1)
+  px(ctx, x + 1, y + 1, 30, 53, '#16120d')
+  px(ctx, x + 1, y + 1, 30, 2, P.woodLit)
+  for (let i = 0; i < 7; i++) {
+    const nx = x + 4 + (i % 2) * 13
+    const ny = y + 6 + Math.floor(i / 2) * 11
+    const c = i % 3 === 0 ? P.goldLit : i % 3 === 1 ? P.bone : P.tealLit
+    px(ctx, nx, ny, 10, 8, c)
+    px(ctx, nx, ny, 10, 1, '#fff6bf')
+    px(ctx, nx + 2, ny + 3, 6, 1, P.ink)
+    if (i % 2 === 0) px(ctx, nx + 2, ny + 5, 4, 1, P.ink)
+  }
+  pxLine(ctx, x + 26, y + 48, x + 39, y + 72, P.plateDark, 2)
+}
 
-/**
- * A chunky little cathode screen on the shelf. Decoration only: the numbers on
- * it are three green rows and a candle stub, not a chart.
- */
-function drawTerminalCase(ctx: Ctx): void {
-  const { x, y, w, h } = TERM
-  // casing
-  px(ctx, x, y, w, h, P.stoneDark)
-  px(ctx, x, y, w, 2, P.stoneLit)
-  px(ctx, x + 1, y + h - 2, w - 2, 2, P.stoneDeep)
-  outline(ctx, x, y, w, h, P.ink, 1)
-  // screen well
-  px(ctx, x + 2, y + 2, w - 4, 9, '#081109')
-  outline(ctx, x + 2, y + 2, w - 4, 9, P.ink, 1)
-  // dead phosphor — the lit rows are painted per frame
-  px(ctx, x + 4, y + 4, 6, 1, P.green)
-  px(ctx, x + 4, y + 6, 9, 1, P.green)
-  px(ctx, x + 4, y + 8, 4, 1, P.green)
-  // vents and a single fat knob
-  px(ctx, x + 4, y + 12, 8, 1, P.stoneDeep)
-  px(ctx, x + 15, y + 12, 2, 2, P.goldDark)
-  // stub candle wedged beside it, because the screen light is not enough
-  px(ctx, x - 4, y + 9, 3, 6, P.boneDim)
-  px(ctx, x - 4, y + 9, 3, 1, P.bone)
-  px(ctx, x - 5, y + 14, 5, 1, P.woodDark)
+function drawMonitorCase(ctx: Ctx, x: number, y: number, w: number, h: number): void {
+  outline(ctx, x, y, w, h, P.ink, 2)
+  px(ctx, x + 2, y + 2, w - 4, h - 4, P.plateDark)
+  px(ctx, x + 3, y + 3, w - 6, h - 8, '#061018')
+  px(ctx, x + 3, y + h - 5, w - 6, 2, P.plate)
+  px(ctx, x + Math.floor(w / 2) - 2, y + h, 4, 8, P.plateDark)
+  px(ctx, x + Math.floor(w / 2) - 8, y + h + 7, 16, 3, P.plateDeep)
+}
+
+function drawMonitorBank(ctx: Ctx): void {
+  for (const m of MONITORS) drawMonitorCase(ctx, m.x, m.y, m.w, m.h)
+
+  // a small laptop angled on the right side of the desk
+  px(ctx, 129, 119, 28, 11, P.plateDark)
+  px(ctx, 131, 121, 24, 6, '#07131b')
+  px(ctx, 127, 130, 34, 5, P.plate)
+  px(ctx, 127, 134, 34, 1, P.ink)
+}
+
+function drawDesk(ctx: Ctx): void {
+  const y = 133
+  px(ctx, 22, y, 148, 12, P.wood)
+  px(ctx, 22, y, 148, 2, P.woodHi)
+  px(ctx, 22, y + 10, 148, 2, P.woodDeep)
+  outline(ctx, 22, y, 148, 12, P.ink, 1)
+
+  // drawers and upgradeable empty bay
+  px(ctx, 27, y + 12, 36, 28, P.woodDark)
+  px(ctx, 130, y + 12, 34, 28, P.woodDark)
+  outline(ctx, 27, y + 12, 36, 28, P.ink, 1)
+  outline(ctx, 130, y + 12, 34, 28, P.ink, 1)
+  px(ctx, 39, y + 21, 12, 2, P.goldDark)
+  px(ctx, 141, y + 21, 12, 2, P.goldDark)
+  px(ctx, 70, y + 16, 48, 18, '#10171f')
+  outline(ctx, 70, y + 16, 48, 18, P.ink, 1)
+  px(ctx, 77, y + 22, 34, 1, P.stoneHi)
+  px(ctx, 77, y + 27, 24, 1, P.stoneLit)
+
+  // keyboard and loose paper
+  px(ctx, 66, y + 3, 48, 8, P.plateDeep)
+  for (let x = 69; x < 110; x += 5) px(ctx, x, y + 5, 3, 2, P.plateLit)
+  px(ctx, 48, y + 4, 15, 9, P.bone)
+  px(ctx, 50, y + 7, 10, 1, P.ink)
+  px(ctx, 50, y + 10, 7, 1, P.ink)
+
+  drawCables(ctx)
+}
+
+function drawCables(ctx: Ctx): void {
+  const base = R.floorY + 3
+  pxLine(ctx, 54, 145, 68, base + 5, P.plateDeep, 2)
+  pxLine(ctx, 112, 145, 124, base + 12, P.plateDeep, 2)
+  pxLine(ctx, 132, 145, 154, base + 8, P.plateDeep, 2)
+  pxLine(ctx, 28, base + 18, 76, base + 23, '#0a0d12', 2)
+  pxLine(ctx, 98, base + 14, 145, base + 20, '#0a0d12', 2)
+  px(ctx, 82, base + 18, 13, 7, P.plateDark)
+  px(ctx, 84, base + 20, 2, 2, P.tealLit)
+  px(ctx, 89, base + 20, 2, 2, P.emberLit)
 }
 
 function drawFloor(ctx: Ctx): void {
   const top = R.floorY
-  px(ctx, 0, top, R.w, R.h - top, P.stoneDark)
+  px(ctx, 0, top, R.w, R.h - top, '#131a21')
 
-  // rows get taller toward the viewer — a hint of depth without real perspective
   const rows = [10, 12, 14, 16, 20]
   let y = top
   rows.forEach((rh, ri) => {
-    const tileW = 22 + ri * 4
-    const offset = ri % 2 ? tileW / 2 : 0
-    for (let x = -offset; x < R.w; x += tileW) {
-      const n = noise2(x + ri * 31, ri * 7)
-      const c = n > 0.66 ? P.stone : n > 0.3 ? '#3f382f' : '#37302a'
-      px(ctx, x, y, tileW - 1, rh - 1, c)
-      px(ctx, x, y, tileW - 1, 1, n > 0.5 ? P.stoneLit : '#4d4539')
-      px(ctx, x + tileW - 1, y, 1, rh, P.stoneDeep)
-      // cracks / chips
-      if (n > 0.84) px(ctx, x + 4, y + 4, Math.floor(n * 8), 1, P.stoneDeep)
-      if (n < 0.12) px(ctx, x + tileW - 8, y + rh - 5, 3, 2, P.stoneDeep)
+    const plankW = 28 + ri * 4
+    const offset = ri % 2 ? plankW / 2 : 0
+    for (let x = -offset; x < R.w; x += plankW) {
+      const n = noise2(x + ri * 17, ri * 11)
+      const c = n > 0.62 ? '#1c2530' : n > 0.3 ? '#18212a' : '#141c24'
+      px(ctx, x, y, plankW - 1, rh - 1, c)
+      px(ctx, x, y, plankW - 1, 1, n > 0.48 ? '#263340' : '#202a34')
+      px(ctx, x + plankW - 1, y, 1, rh, '#0d1218')
     }
-    px(ctx, 0, y + rh - 1, R.w, 1, P.stoneDeep)
+    px(ctx, 0, y + rh - 1, R.w, 1, '#0d1218')
     y += rh
   })
 
-  // darken the back edge where floor meets wall
-  pxa(ctx, 0, top, R.w, 6, '#000000', 0.4)
-  pxa(ctx, 0, top, R.w, 3, '#000000', 0.3)
+  // desk rug
+  px(ctx, 44, top + 18, 103, 33, '#191822')
+  outline(ctx, 44, top + 18, 103, 33, P.ink, 1)
+  for (let x = 50; x < 142; x += 10) pxa(ctx, x, top + 22, 3, 25, P.spiritDeep, 0.28)
+  pxa(ctx, 54, top + 30, 84, 5, P.spirit, 0.08)
+
+  pxa(ctx, 0, top, R.w, 5, '#000000', 0.36)
 }
 
-function drawStrawBed(ctx: Ctx): void {
-  const x = 6
-  const y = 158
-  // mat
-  px(ctx, x, y, 44, 18, P.strawDark)
-  px(ctx, x, y, 44, 2, P.straw)
-  outline(ctx, x, y, 44, 18, P.ink, 1)
-  for (let i = 0; i < 40; i += 3) {
-    const n = noise2(i, 5)
-    px(ctx, x + 2 + i, y + 3 + Math.floor(n * 12), 3, 1, n > 0.5 ? P.strawLit : P.straw)
-  }
-  // rolled blanket
-  px(ctx, x + 26, y - 5, 20, 8, P.tealDeep)
-  px(ctx, x + 26, y - 5, 20, 2, P.teal)
-  outline(ctx, x + 26, y - 5, 20, 8, P.ink, 1)
-  // pillow
-  px(ctx, x + 3, y - 4, 16, 7, P.boneDim)
-  px(ctx, x + 3, y - 4, 16, 2, P.bone)
-  outline(ctx, x + 3, y - 4, 16, 7, P.ink, 1)
+function drawChair(ctx: Ctx): void {
+  const x = 10
+  const y = 152
+  // reclined office chair where recover lands
+  px(ctx, x + 16, y - 10, 22, 24, P.plateDark)
+  px(ctx, x + 16, y - 10, 3, 24, P.plateLit)
+  px(ctx, x + 19, y - 8, 17, 18, '#202a35')
+  outline(ctx, x + 16, y - 10, 22, 24, P.ink, 1)
+  px(ctx, x + 6, y + 7, 34, 10, P.plateDark)
+  px(ctx, x + 6, y + 7, 34, 2, P.plateLit)
+  outline(ctx, x + 6, y + 7, 34, 10, P.ink, 1)
+  px(ctx, x + 22, y + 17, 5, 14, P.plateDeep)
+  pxLine(ctx, x + 24, y + 28, x + 9, y + 34, P.plateDeep, 2)
+  pxLine(ctx, x + 24, y + 28, x + 40, y + 34, P.plateDeep, 2)
+  px(ctx, x + 7, y + 34, 5, 3, P.ink)
+  px(ctx, x + 38, y + 34, 5, 3, P.ink)
+  px(ctx, x + 1, y + 11, 9, 4, P.plateDark)
 }
 
-/**
- * The pot on the tripod. It used to hold stew. It holds coffee now and it has
- * been on the fire since a drawdown he does not discuss.
- */
-function drawUrnBody(ctx: Ctx): void {
+function drawCoffeeStack(ctx: Ctx): void {
   const x = 148
-  const y = 150
-  // tripod
-  px(ctx, x + 2, y + 20, 3, 8, P.plateDark)
-  px(ctx, x + 27, y + 20, 3, 8, P.plateDark)
-  px(ctx, x + 14, y + 22, 3, 6, P.plateDark)
-  // pot
-  px(ctx, x, y + 4, 32, 18, '#16181e')
-  px(ctx, x + 2, y + 22, 28, 3, '#16181e')
-  px(ctx, x + 6, y + 25, 20, 2, '#0f1116')
-  outline(ctx, x, y + 4, 32, 18, P.ink, 1)
-  // rim
-  px(ctx, x - 2, y, 36, 5, P.plateDark)
-  px(ctx, x - 2, y, 36, 2, P.plateLit)
-  px(ctx, x - 2, y + 4, 36, 1, P.ink)
-  // surface — thick, and a long way past drinkable
-  px(ctx, x + 3, y + 2, 26, 2, P.emberDeep)
-  px(ctx, x + 8, y + 2, 8, 1, P.ember)
-  // highlight
-  px(ctx, x + 2, y + 8, 2, 10, '#2a2f38')
+  const y = 146
+
+  // tiny side table and machine
+  px(ctx, x - 2, y + 15, 34, 8, P.woodDark)
+  px(ctx, x - 2, y + 15, 34, 2, P.woodHi)
+  outline(ctx, x - 2, y + 15, 34, 8, P.ink, 1)
+  px(ctx, x + 8, y - 2, 18, 20, P.plateDark)
+  px(ctx, x + 8, y - 2, 18, 2, P.plateLit)
+  outline(ctx, x + 8, y - 2, 18, 20, P.ink, 1)
+  px(ctx, x + 12, y + 3, 10, 6, '#061018')
+  px(ctx, x + 14, y + 5, 6, 1, P.tealLit)
+  px(ctx, x + 11, y + 12, 12, 3, P.ink)
+
+  // mug
+  px(ctx, x + 1, y + 6, 10, 11, P.goldDark)
+  px(ctx, x + 1, y + 6, 10, 2, P.goldLit)
+  px(ctx, x + 10, y + 8, 4, 5, P.goldDark)
+  outline(ctx, x + 1, y + 6, 10, 11, P.ink, 1)
+  px(ctx, x + 3, y + 8, 6, 2, '#3b2415')
+
+  // note stack
+  px(ctx, x + 2, y + 23, 25, 5, P.boneDim)
+  px(ctx, x + 4, y + 21, 20, 5, P.bone)
+  px(ctx, x + 7, y + 23, 12, 1, P.ink)
 }
 
-/* --------------------------------------------------------------------------
-   Cobwebs / grime when the hall is neglected
-   -------------------------------------------------------------------------- */
+function drawSkirting(ctx: Ctx): void {
+  const y = 140
+  px(ctx, 0, y, R.w, 12, P.stoneDeep)
+  px(ctx, 0, y, R.w, 1, P.ink)
+  px(ctx, 0, y + 2, R.w, 2, P.stoneLit)
+  for (let x = 4; x < R.w; x += 22) {
+    px(ctx, x, y + 6, 12, 2, P.plateDark)
+  }
+  px(ctx, 0, y + 11, R.w, 1, P.ink)
+}
 
 function drawGrime(ctx: Ctx, level: number): void {
   if (level <= 0) return
   const a = level === 1 ? 0.55 : 1
 
-  // cobwebs in the two upper corners of the hall
-  for (const [ox, flip] of [
-    [0, false],
-    [R.w - 22, true],
-  ] as [number, boolean][]) {
-    const web = `rgba(198,188,164,${a * 0.34})`
-    for (let i = 0; i < 6; i++) {
-      const len = 5 + i * 3
-      const y = 14 + i * 3
-      pxa(ctx, flip ? ox + 22 - len : ox, y, len, 1, P.boneDim, a * 0.3)
+  // more heat means more paper, spills and ugly cable loops
+  for (let i = 0; i < 6 * level; i++) {
+    const n = noise2(i * 4.1, 52)
+    const x = 16 + Math.floor(n * 154)
+    const y = R.floorY + 8 + Math.floor(noise2(77, i) * 34)
+    pxa(ctx, x, y, 5, 3, i % 2 ? P.boneDim : P.goldLit, a * 0.55)
+    pxa(ctx, x + 1, y + 1, 3, 1, P.ink, a * 0.45)
+  }
+
+  pxa(ctx, 143, R.floorY + 15, 17, 4, '#3a2415', a * 0.8)
+  pxa(ctx, 146, R.floorY + 13, 9, 2, '#4c311c', a * 0.58)
+
+  for (let i = 0; i < 4 * level; i++) {
+    const y = R.floorY + 18 + i * 4
+    pxLine(ctx, 52 + i * 9, y, 88 + i * 8, y + (i % 2 ? -5 : 6), '#080b10', 1)
+  }
+
+  if (level > 1) {
+    for (const x of [28, 119, 154]) {
+      pxa(ctx, x, 44, 2, 24, '#070b10', 0.45)
+      pxa(ctx, x + 2, 47, 1, 18, '#0a1017', 0.32)
     }
-    pxLine(ctx, flip ? ox + 22 : ox, 12, flip ? ox : ox + 22, 34, web, 1)
-    pxLine(ctx, flip ? ox + 22 : ox, 12, flip ? ox + 6 : ox + 16, 36, web, 1)
-  }
-
-  // damp running down the boards
-  for (const dx of [46, 118, 148]) {
-    const h = 20 + ((dx * 7) % 14)
-    pxa(ctx, dx, 44, 2, h, '#1b1408', a * 0.5)
-    pxa(ctx, dx + 2, 44, 1, h - 6, '#241a0c', a * 0.35)
-    pxa(ctx, dx - 1, 44 + h - 4, 4, 3, '#1b1408', a * 0.4)
-  }
-
-  // floor muck: dark patches with a sour green-brown cast
-  const bandH = R.h - R.floorY - 8
-  for (let i = 0; i < 22 * level; i++) {
-    const n = noise2(i * 3.7, 91)
-    const m = noise2(91, i * 2.3)
-    const x = Math.floor(n * (R.w - 10))
-    const y = R.floorY + 5 + Math.floor(m * bandH)
-    const w = 3 + Math.floor(noise2(i, 5) * 5)
-    pxa(ctx, x, y, w, 2, '#332b16', a * 0.75)
-    pxa(ctx, x + 1, y - 1, w - 2, 1, '#3d3419', a * 0.45)
-  }
-
-  // spilled coffee by the fire and torn paper by the mat, the two places he
-  // stops moving
-  pxa(ctx, 140, R.floorY + 16, 14, 3, '#3a2f14', a * 0.8)
-  pxa(ctx, 143, R.floorY + 14, 8, 2, '#463a1a', a * 0.6)
-  for (let i = 0; i < 5 * level; i++) {
-    pxa(ctx, 14 + i * 7, R.floorY + 9 + ((i * 5) % 9), 2, 2, '#4a3d1c', a * 0.7)
   }
 }
 
-/* --------------------------------------------------------------------------
-   The bands above and below the hall
-   -------------------------------------------------------------------------- */
-
-/** Unlit rafter space above the ceiling beam. Canvas coordinates. */
-function drawRafters(ctx: Ctx): void {
-  px(ctx, 0, 0, R.w, VOID_H, '#080604')
-
-  // upper wall boards, barely lit
-  for (let i = 0; i * 16 < R.w; i++) {
-    const x = i * 16
-    const n = noise2(i, 17)
-    px(ctx, x, 0, 16, VOID_H, n > 0.5 ? '#120b06' : '#0d0805')
-    px(ctx, x, 0, 1, VOID_H, '#070402')
-    px(ctx, x + 1, 0, 1, VOID_H, '#1a1008')
-  }
-
-  // three rafters running across, the lowest one catching the most light
-  const rafters: [number, string, string][ ] = [
-    [6, '#150d07', '#1e130a'],
-    [24, '#1a1009', '#261709'],
-    [40, '#22150b', '#33200f'],
-  ]
-  for (const [y, body, lit] of rafters) {
-    px(ctx, 0, y, R.w, 6, body)
-    px(ctx, 0, y, R.w, 1, lit)
-    px(ctx, 0, y + 5, R.w, 1, '#050302')
-    // iron straps
-    for (let x = 14; x < R.w; x += 46) {
-      px(ctx, x, y, 3, 6, '#161a20')
-      px(ctx, x, y, 3, 1, '#232932')
-    }
-  }
-
-  // two chains hanging out of the dark, each ending in a shuttered lantern
-  for (const l of LAMPS) {
-    for (let y = 0; y < l.y - 8; y += 4) {
-      px(ctx, l.x, y, 2, 3, y % 8 === 0 ? '#2a3038' : '#1a1f26')
-    }
-    drawLantern(ctx, l.x, l.y)
-  }
-
-  // heavy gloom, dithered so it never reads as a CSS gradient
-  for (let i = 0; i < 6; i++) {
-    dither(ctx, 0, 0, R.w, 6 + i * 4, '#000000', 1, 0.13)
-  }
-}
-
-/** Hanging lanterns in the rafter void. Canvas coordinates, tops of the caps. */
-const LAMPS = [
-  { x: 50, y: 36 },
-  { x: 142, y: 36 },
-] as const
-
-function drawLantern(ctx: Ctx, x: number, y: number): void {
-  const c = x + 1 // centre of the 2px chain
-  // hook + ring
-  px(ctx, c - 2, y - 6, 4, 2, '#232932')
-  outline(ctx, c - 3, y - 4, 6, 5, '#1d2229', 1)
-  // cap
-  px(ctx, c - 6, y, 12, 3, '#232932')
-  px(ctx, c - 6, y, 12, 1, '#333b46')
-  px(ctx, c - 4, y + 3, 8, 1, '#1a1f26')
-  // cage: two iron posts with a smoked pane between them
-  pxa(ctx, c - 3, y + 3, 6, 10, '#3a2410', 0.85)
-  px(ctx, c - 5, y + 3, 2, 10, '#1d2229')
-  px(ctx, c + 3, y + 3, 2, 10, '#1d2229')
-  px(ctx, c - 3, y + 7, 6, 1, '#2a3038')
-  // candle stub
-  px(ctx, c - 1, y + 9, 3, 4, P.boneDeep)
-  // base
-  px(ctx, c - 6, y + 13, 12, 2, '#232932')
-  px(ctx, c - 6, y + 14, 12, 1, '#0d1014')
-}
-
-/** Floor in front of the hall, closest to the viewer. Canvas coordinates. */
 function drawForeground(ctx: Ctx): void {
   const top = VOID_H + R.h
-  px(ctx, 0, top, R.w, FORE_H, P.stoneDark)
+  px(ctx, 0, top, R.w, FORE_H, '#111820')
 
-  // two courses of big flagstones
   let y = top
   for (const [rh, tileW, off] of [
-    [11, 46, 0],
-    [13, 54, 27],
+    [11, 48, 0],
+    [13, 56, 28],
   ] as [number, number, number][]) {
     for (let x = -off; x < R.w; x += tileW) {
-      const n = noise2(x + rh * 13, rh)
-      px(ctx, x, y, tileW - 2, rh - 1, n > 0.6 ? P.stone : n > 0.28 ? '#3d362f' : '#342d27')
-      px(ctx, x, y, tileW - 2, 1, n > 0.5 ? P.stoneLit : '#4a4236')
-      px(ctx, x + tileW - 2, y, 2, rh, P.stoneDeep)
-      if (n > 0.8) px(ctx, x + 8, y + 5, Math.floor(n * 12), 1, P.stoneDeep)
+      const n = noise2(x + rh * 9, rh)
+      px(ctx, x, y, tileW - 2, rh - 1, n > 0.58 ? '#18212b' : '#131b24')
+      px(ctx, x, y, tileW - 2, 1, '#263340')
+      px(ctx, x + tileW - 2, y, 2, rh, '#0b1016')
     }
-    px(ctx, 0, y + rh - 1, R.w, 1, P.stoneDeep)
+    px(ctx, 0, y + rh - 1, R.w, 1, '#0b1016')
     y += rh
   }
 
-  // the very front edge falls into shadow
+  // foreground cable roll
+  pxLine(ctx, 12, top + 15, 46, top + 18, '#070a0f', 2)
+  pxLine(ctx, 136, top + 12, 178, top + 19, '#070a0f', 2)
+
   for (let i = 0; i < 5; i++) {
     dither(ctx, 0, SCENE.h - (2 + i * 3), R.w, 2 + i * 3, '#000000', 1, 0.16)
   }
@@ -614,24 +401,21 @@ function buildStatic(grime: number): HTMLCanvasElement {
   const ctx = cv.getContext('2d')!
   ctx.imageSmoothingEnabled = false
 
-  drawRafters(ctx)
+  drawCeilingVoid(ctx)
 
   ctx.save()
   ctx.translate(0, VOID_H)
   drawWall(ctx)
-  drawCeiling(ctx)
-  drawArchAndDoor(ctx)
-  drawBanner(ctx, 6, 26, 52)
-  drawBanner(ctx, 168, 26, 52)
-  drawWeaponRack(ctx)
-  drawShelf(ctx)
-  drawTerminalCase(ctx)
+  drawCityWindow(ctx)
+  drawSideLight(ctx, 17, 66)
+  drawSideLight(ctx, 161, 66, true)
+  drawNotesBoard(ctx)
+  drawMonitorBank(ctx)
   drawSkirting(ctx)
+  drawDesk(ctx)
   drawFloor(ctx)
-  drawStrawBed(ctx)
-  drawUrnBody(ctx)
-  drawTorchBracket(ctx, 26, 82)
-  drawTorchBracket(ctx, 166, 82)
+  drawChair(ctx)
+  drawCoffeeStack(ctx)
   drawGrime(ctx, grime)
   ctx.restore()
 
@@ -654,17 +438,11 @@ function getStatic(grime: number): HTMLCanvasElement {
    -------------------------------------------------------------------------- */
 
 export interface RoomOpts {
-  /** ms timestamp for animation */
   t: number
-  /** 0 = clean, 1 = grubby, 2 = filthy */
   grime: number
-  /** 0..1 extra darkness (used while he sleeps) */
   dim: number
-  /** 0..1 how strongly the terminal and the door-crack are glowing */
   edge: number
-  /** horizontal offset of the character, so his shadow walks with him */
   heroShift?: number
-  /** 0..1 shadow strength — folded up on the mat he barely casts one */
   heroShadow?: number
 }
 
@@ -672,72 +450,73 @@ export function drawRoom(ctx: Ctx, o: RoomOpts): void {
   ctx.imageSmoothingEnabled = false
   ctx.drawImage(getStatic(o.grime), 0, 0)
 
-  const flick = 0.82 + Math.sin(o.t / 130) * 0.1 + Math.sin(o.t / 57) * 0.08
-  const lightStrength = (1 - o.dim * 0.75) * flick
+  const flick = 0.86 + Math.sin(o.t / 180) * 0.08 + Math.sin(o.t / 67) * 0.05
+  const lightStrength = (1 - o.dim * 0.72) * flick
 
-  // lantern candles in the rafters — the only light up there. Canvas space.
-  for (const l of LAMPS) {
-    const c = l.x + 1
-    const h = 3 + (Math.floor(o.t / 120 + c) % 3)
-    lightPool(ctx, c, l.y + 8, 20, P.ember, 0.12 * lightStrength)
-    pxa(ctx, c - 1, l.y + 9 - h, 3, h, P.emberLit, 0.92 * lightStrength)
-    pxa(ctx, c, l.y + 8 - h, 1, 2, P.emberPale, 0.8 * lightStrength)
+  // status LEDs in the ceiling void
+  for (const l of LEDS) {
+    const on = Math.sin(o.t / 520 + l.x) > -0.35
+    pxa(ctx, l.x - 4, 40, 10, 1, on ? P.tealLit : P.spirit, on ? 0.72 : 0.25)
+    lightPool(ctx, l.x + 1, 42, 18, P.tealLit, 0.06 * lightStrength)
   }
 
-  // everything below is authored in room space
   ctx.save()
   ctx.translate(0, VOID_H)
 
-  // torch flames + their light
-  for (const [x, seed] of [
-    [26, 0.1],
-    [166, 0.7],
-  ] as [number, number][]) {
-    lightPool(ctx, x, 84, 34, P.ember, 0.16 * lightStrength)
-    flame(ctx, x - 3, 70, o.t, seed)
-    // pool on the floor beneath
-    lightPool(ctx, x, R.floorY + 16, 30, P.emberLit, 0.1 * lightStrength)
-  }
+  // monitor charts
+  const feed = 0.42 + o.edge * 0.58
+  MONITORS.forEach((m, mi) => {
+    const scan = Math.floor(o.t / (150 + mi * 25)) % 4
+    const sx = m.x + 5
+    const sy = m.y + 6
+    const sw = m.w - 10
+    const sh = m.h - 13
+    pxa(ctx, sx, sy, sw, sh, mi === 1 ? P.spiritDeep : P.tealDeep, 0.22 * feed)
+    for (let r = 0; r < 4; r++) {
+      const y = sy + 3 + r * Math.max(3, Math.floor(sh / 5))
+      const rowW = 7 + ((Math.floor(o.t / 360) + r * 3 + mi) % Math.max(8, sw - 5))
+      pxa(ctx, sx + 2, y, Math.min(rowW, sw - 4), 1, m.hue, feed * (r === scan ? 0.95 : 0.42))
+    }
+    for (let i = 0; i < 4; i++) {
+      const x0 = sx + 3 + i * Math.floor(sw / 5)
+      const y0 = sy + sh - 3 - ((i * 5 + Math.floor(o.t / 260) + mi * 3) % Math.max(5, sh - 4))
+      const x1 = sx + 6 + (i + 1) * Math.floor(sw / 5)
+      const y1 = sy + sh - 4 - (((i + 1) * 7 + Math.floor(o.t / 260) + mi * 3) % Math.max(5, sh - 4))
+      pxLine(ctx, x0, y0, x1, y1, mi === 1 ? P.spiritLit : P.tealLit, 1)
+    }
+    lightPool(ctx, m.x + m.w / 2, m.y + m.h / 2, 22 + mi * 2, m.hue, 0.06 * feed * lightStrength)
+  })
 
-  // fire under the urn
-  const fx = 156
-  const fy = 176
-  for (let i = 0; i < 4; i++) {
-    const w = 3 + ((Math.floor(o.t / 90) + i) % 3)
-    pxa(ctx, fx + i * 5, fy - w, 4, w, i % 2 ? P.emberLit : P.ember, 0.9)
-  }
-  pxa(ctx, fx - 2, fy, 26, 2, P.emberDeep, 0.9)
-  lightPool(ctx, 164, 172, 26, P.emberLit, 0.14 * lightStrength)
+  // laptop pulse
+  pxa(ctx, 133, 122, 17 + (Math.floor(o.t / 420) % 5), 1, P.greenLit, 0.62 * feed)
+  pxa(ctx, 133, 125, 10, 1, P.tealLit, 0.42 * feed)
 
-  // steam off the coffee
-  for (let i = 0; i < 3; i++) {
-    const ph = (o.t / 26 + i * 22) % 44
-    pxa(ctx, 156 + i * 7 + Math.round(Math.sin((o.t / 240) + i) * 2), 150 - ph, 2, 2, P.boneDim, Math.max(0, 0.4 - ph / 110))
-  }
-
-  // the terminal: three phosphor rows that redraw themselves, and the candle
-  // stub beside it. Purely decorative — brighter when he actually has a read.
-  const feed = 0.35 + o.edge * 0.65
-  const scan = Math.floor(o.t / 150) % 3
-  for (let r = 0; r < 3; r++) {
-    const rowW = [6, 9, 4][r] + ((Math.floor(o.t / 420) + r) % 3)
-    const lit = r === scan ? 1 : 0.5
-    pxa(ctx, TERM.x + 4, TERM.y + 4 + r * 2, rowW, 1, P.greenLit, feed * lit)
-  }
-  pxa(ctx, TERM.x + 3, TERM.y + 3, TERM.w - 6, 7, P.green, 0.1 * feed)
-  lightPool(ctx, TERM.x + 10, TERM.y + 7, 16, P.greenLit, 0.09 * feed * lightStrength)
-  const ch = 2 + (Math.floor(o.t / 170) % 2)
-  pxa(ctx, TERM.x - 3, TERM.y + 8 - ch, 1, ch, P.emberPale, 0.85 * lightStrength)
-  lightPool(ctx, TERM.x - 3, TERM.y + 8, 12, P.ember, 0.1 * lightStrength)
-
-  // cold light bleeding under the door — the way out, still there
+  // city window lights
   if (o.edge > 0.05) {
-    lightPool(ctx, 96, 140, 26 + o.edge * 10, P.spirit, 0.1 * o.edge)
+    for (let i = 0; i < 10; i++) {
+      const x = 57 + i * 8
+      const y = 70 + Math.floor(noise2(i, Math.floor(o.t / 900)) * 30)
+      pxa(ctx, x, y, 4, 1, i % 3 === 0 ? P.goldLit : P.spiritLit, 0.16 + o.edge * 0.3)
+    }
+    lightPool(ctx, 96, 108, 34 + o.edge * 12, P.spirit, 0.08 * o.edge)
+  }
+
+  // coffee steam
+  for (let i = 0; i < 3; i++) {
+    const ph = (o.t / 28 + i * 20) % 42
+    pxa(
+      ctx,
+      152 + i * 4 + Math.round(Math.sin(o.t / 230 + i) * 2),
+      151 - ph,
+      2,
+      2,
+      P.boneDim,
+      Math.max(0, 0.38 - ph / 105),
+    )
   }
 
   ctx.restore()
 
-  // hero drop shadow (drawn before the sprite by the caller's ordering)
   const shade = o.heroShadow ?? 1
   if (shade > 0.03) {
     const hx = SCENE.heroX + Math.round(o.heroShift ?? 0)
@@ -746,9 +525,7 @@ export function drawRoom(ctx: Ctx, o: RoomOpts): void {
   }
 }
 
-/** Foreground pass: vignette + optional darkness. Drawn after the character. */
 export function drawRoomOverlay(ctx: Ctx, o: RoomOpts): void {
-  // edge vignette, dithered so it never looks like a CSS gradient
   for (let i = 0; i < 5; i++) {
     const a = 0.14 - i * 0.024
     dither(ctx, 0, 0, R.w, 3 + i * 3, '#000000', 1, a)

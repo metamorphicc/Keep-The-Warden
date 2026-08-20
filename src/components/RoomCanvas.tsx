@@ -79,9 +79,9 @@ export function RoomCanvas() {
       const phase = act.duration > 0 ? clamp(elapsed / act.duration, 0, 1) : 1
       const kind = phase >= 1 ? 'idle' : act.kind
 
-      // the hall goes to seed when he runs hot and stops looking after it
+      // the desk goes to seed when he runs hot and stops looking after it
       const grime = s.stats.heat > 82 ? 2 : s.stats.heat > 58 ? 1 : 0
-      // the hall darkens while he is out cold at the desk
+      // the room darkens while he is out cold in the chair
       const dim = kind === 'recover' ? Math.sin(clamp(phase * 2.4, 0, 1) * Math.PI * 0.5) * 0.55 : 0
       const edge = s.stats.edge / 100
 
@@ -100,7 +100,7 @@ export function RoomCanvas() {
       drawRoom(ctx, opts)
       drawWarden(ctx, SCENE.heroX, SCENE.heroY, pose, s.look, reduce ? 1200 : now)
 
-      // ambient motes drifting through the torchlight
+      // ambient motes and tiny monitor static in the late-session air
       ambient += dt
       if (!reduce && ambient > 420) {
         ambient = 0
@@ -111,9 +111,8 @@ export function RoomCanvas() {
           1,
           0.4,
         )
-        const torchY = HOTSPOTS.torchL.y + 6
-        if (Math.random() < 0.5) particles.spawn('ember', 26, torchY, 1, 0.6)
-        if (Math.random() < 0.5) particles.spawn('ember', 166, torchY, 1, 0.6)
+        if (Math.random() < 0.45) particles.spawn('spark', 62, HOTSPOTS.terminal.y + 12, 1, 0.45)
+        if (Math.random() < 0.45) particles.spawn('spark', 132, HOTSPOTS.terminal.y + 10, 1, 0.45)
       }
       // steady sleep marks
       if (kind === 'recover' && phase > 0.2 && phase < 0.85 && Math.random() < dt / 900) {
@@ -175,7 +174,7 @@ export function RoomCanvas() {
       case 'torchR':
         say(propLine(hit))
         play('spark')
-        emberPuff(hit)
+        screenSpark(hit)
         break
       case 'door':
         say(propLine('door'))
@@ -194,15 +193,15 @@ export function RoomCanvas() {
         ref={canvasRef}
         className="stage__canvas"
         onPointerDown={onPointerDown}
-        aria-label="The Pit. Tap the trader to check the PnL."
+        aria-label="The Desk. Tap the trader to check the PnL."
         role="img"
       />
     </div>
   )
 }
 
-/** Kick a few embers off a wall torch. */
-function emberPuff(which: 'torchL' | 'torchR'): void {
+/** Kick a few blue pixels off the window lights and cable tray. */
+function screenSpark(which: 'torchL' | 'torchR'): void {
   const h = HOTSPOTS[which]
-  burst('ember', { x: h.x + h.w / 2, y: h.y + 6, count: 8, power: 1.4 })
+  burst('spark', { x: h.x + h.w / 2, y: h.y + 10, count: 7, power: 1.1 })
 }

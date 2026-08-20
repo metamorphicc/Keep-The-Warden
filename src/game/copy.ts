@@ -64,7 +64,7 @@ const SATURATED = [
 ] as const
 
 const RECOVER = [
-  'He sleeps at the desk by choice. He calls a bed "soft thinking".',
+  'He sleeps in the chair by choice. He calls a bed "soft thinking".',
   'Out cold in nine seconds. Old trader trick.',
   'Snoring like a printer. The heat bleeds off.',
   'He dreams of a flat book. He has one. He still dreams of it.',
@@ -156,30 +156,30 @@ const COOLDOWN = [
 ] as const
 
 const PROP_DOOR = [
-  'The exit. It stays shut while there is size on. That was the arrangement.',
-  'Somebody knocks about a settlement. He pretends not to hear.',
-  '"Not tonight," he says, to nobody in particular.',
+  'The city keeps printing lights. He keeps pretending that helps.',
+  'The window shows desks in other towers. Every one of them is probably wrong.',
+  '"Not tonight," he says, to the skyline.',
 ] as const
 
 const PROP_TORCH = [
-  'The flame leans away from the terminal. It always does.',
-  'He keeps them fed. Fire is cheaper than electricity here.',
+  'Neon leaks through the blinds and lands badly on the PnL.',
+  'A cable tray blinks twice. Nobody should trust a cable tray.',
 ] as const
 
 const PROP_TERMINAL = [
-  'Green text on black. Six questions and no answers.',
-  'The old terminal has been on since a drawdown he does not discuss.',
+  'Three monitors, six questions, no answers willing to identify themselves.',
+  'The terminal has been on since a drawdown he does not discuss.',
 ] as const
 
 const PROP_URN = [
-  'Coffee, technically. The sediment has strata now.',
+  'Coffee, technically. The sediment has a term structure now.',
   'He drinks it black. Sugar is a position and he is flat.',
-  'The pot outlasted two employers and one marriage.',
+  'The mug has outlasted two employers and one marriage.',
 ] as const
 
 const PROP_BED = [
-  'A cot, a rolled blanket, forty years of bad hours.',
-  'He calls it a bed. It calls itself a pile.',
+  'An office chair, a torn cushion, forty years of bad hours.',
+  'He calls it ergonomic because nobody is awake to dispute him.',
 ] as const
 
 export const COPY = {
@@ -217,7 +217,7 @@ export const COPY = {
 export const BOOT_LINES = [
   'Somebody has to price the questions nobody can answer.',
   'The money is fake. The burnout is not.',
-  'He was a hero once. Now he is a caretaker with two probes.',
+  'He was early once. Now he keeps three monitors and a grudge.',
 ] as const
 
 export function bootLine(): string {

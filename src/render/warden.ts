@@ -435,42 +435,37 @@ function drawBlade(
   aura: number,
 ): void {
   if (len <= 0) return
-  const ex = hx + Math.cos(angle) * len
-  const ey = hy - Math.sin(angle) * len
+  const probeLen = Math.min(len, 16)
+  const ex = hx + Math.cos(angle) * probeLen
+  const ey = hy - Math.sin(angle) * probeLen
 
-  // grip + pommel behind the hand
+  // grip + cable plug behind the hand
   const gx = hx - Math.cos(angle) * 4
   const gy = hy + Math.sin(angle) * 4
   pxLine(ctx, hx, hy, gx, gy, P.woodDark, 3)
-  px(ctx, Math.round(gx) - 1, Math.round(gy) - 1, 3, 3, P.goldDark)
-
-  // crossguard, perpendicular to the blade
-  const pxv = Math.cos(angle + Math.PI / 2) * 4
-  const pyv = -Math.sin(angle + Math.PI / 2) * 4
-  pxLine(ctx, hx - pxv, hy - pyv, hx + pxv, hy + pyv, P.gold, 2)
-  pxLine(ctx, hx - pxv * 0.5, hy - pyv * 0.5, hx + pxv * 0.5, hy + pyv * 0.5, P.goldLit, 1)
+  px(ctx, Math.round(gx) - 1, Math.round(gy) - 1, 3, 3, P.plateDark)
 
   // glow halo
   if (kit.blade.glow) {
     const prev = ctx.globalAlpha
     const gm = kit.blade.glowMul
-    ctx.globalAlpha = prev * (0.2 + 0.28 * aura) * gm
-    pxLine(ctx, hx, hy, ex, ey, kit.blade.glow, 6)
-    ctx.globalAlpha = prev * (0.4 + 0.35 * aura) * gm
+    ctx.globalAlpha = prev * (0.15 + 0.22 * aura) * gm
     pxLine(ctx, hx, hy, ex, ey, kit.blade.glow, 4)
+    ctx.globalAlpha = prev * (0.35 + 0.3 * aura) * gm
+    pxLine(ctx, hx, hy, ex, ey, kit.blade.glow, 2)
     ctx.globalAlpha = prev
   }
 
-  // blade body + bright edge
-  pxLine(ctx, hx, hy, ex, ey, kit.blade.core, 3)
+  // blunt signal probe body + lit tip
+  pxLine(ctx, hx, hy, ex, ey, kit.blade.core, 2)
   pxLine(ctx, hx, hy, ex, ey, kit.blade.edge, 1)
-  // tip
-  px(ctx, Math.round(ex) - 1, Math.round(ey) - 1, 2, 2, kit.blade.edge)
+  px(ctx, Math.round(ex) - 1, Math.round(ey) - 1, 3, 3, kit.blade.glow ?? kit.blade.edge)
+  px(ctx, Math.round(ex), Math.round(ey), 1, 1, kit.blade.edge)
 
   if (flash > 0) {
     const prev = ctx.globalAlpha
     ctx.globalAlpha = prev * 0.85
-    pxLine(ctx, hx, hy, ex, ey, '#ffffff', 2)
+    px(ctx, Math.round(ex) - 2, Math.round(ey) - 2, 5, 5, '#ffffff')
     ctx.globalAlpha = prev
   }
 }
