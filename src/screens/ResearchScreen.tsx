@@ -5,8 +5,8 @@ import { PixelIcon } from '../components/PixelIcon'
 import { PixelPanel } from '../components/PixelPanel'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { FloatingTextLayer } from '../components/FloatingTextLayer'
-import { cooldownLeft, deskRead, say, setScreen, useSupply } from '../game/actions'
-import { DESK_READ, EDGE_SOFT_CAP, STATS, STAT_ORDER, SUPPLIES } from '../game/config'
+import { cooldownLeft, deskRead, deskReadGainWithRig, say, setScreen, useSupply } from '../game/actions'
+import { EDGE_SOFT_CAP, STATS, STAT_ORDER, SUPPLIES } from '../game/config'
 import { useGameState } from '../game/store'
 import { formatSeconds } from '../game/util'
 
@@ -24,6 +24,7 @@ export function ResearchScreen() {
   const stock = selected ? (s.stash[selected.id] ?? 0) : 0
   const saturated = s.stats.edge >= EDGE_SOFT_CAP
   const readLeft = cooldownLeft('read')
+  const readGain = deskReadGainWithRig()
 
   const consume = () => {
     if (!selected) return
@@ -124,8 +125,8 @@ export function ResearchScreen() {
             No notes, no signal, no shortcut. An hour with the resolution rules and a pencil.
           </p>
           <ul className="detail__gains">
-            {STAT_ORDER.filter((k) => typeof DESK_READ.gain[k] === 'number').map((k) => {
-              const v = DESK_READ.gain[k]!
+            {STAT_ORDER.filter((k) => typeof readGain[k] === 'number').map((k) => {
+              const v = readGain[k]!
               const good = STATS[k].inverted ? v < 0 : v > 0
               return (
                 <li key={k} className={good ? 'is-up' : 'is-down'}>

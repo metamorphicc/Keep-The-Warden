@@ -16,6 +16,8 @@ import {
   STATS,
   WORLD,
   careerStatusForLevel,
+  nextProgressionTier,
+  progressionTierForLevel,
   xpProgress,
 } from '../game/config'
 import { bankrollHealth, overallForm, useGameState } from '../game/store'
@@ -42,6 +44,8 @@ export function ProfileScreen() {
   const drawdown = s.peakBankroll > 0 ? Math.round((1 - s.bankroll / s.peakBankroll) * 100) : 0
   const xp = xpProgress(s.xp)
   const career = careerStatusForLevel(xp.level)
+  const setup = progressionTierForLevel(xp.level)
+  const nextSetup = nextProgressionTier(xp.level)
   const synced = cloudAvailable()
   // A Telegram account id is what namespaces the save. No id means we are in a
   // plain browser (or a client that hides the user), whatever the SDK claims.
@@ -106,10 +110,11 @@ export function ProfileScreen() {
         >
           <ul className="detail__gains detail__gains--text">
             <Row label="Status" value={career} icon="warden" />
+            <Row label="Setup" value={setup.room} icon="terminal" />
             <Row label="Reputation" value={`${Math.round(s.stats.rep)}/100`} icon="star" />
             <Row
               label="Next step"
-              value={xp.level >= 30 ? 'capped' : `${xp.current}/${xp.needed} XP`}
+              value={nextSetup ? `Lv. ${nextSetup.min}: ${nextSetup.status}` : 'capped'}
               icon="bolt"
             />
           </ul>

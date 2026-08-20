@@ -43,8 +43,10 @@ import type {
   Currency,
   EquipSlot,
   MarketState,
+  MarketDef,
   ScreenId,
   Side,
+  RigBonus,
   StatKey,
   Stats,
   TradeResult,
@@ -110,6 +112,96 @@ function showCredits(delta: number): void {
   floatText(`+${delta} ${WORLD.creditName}`, 'credit')
   play('shard')
   burst('spark', { count: 10, power: 1.3 })
+}
+
+/* ==========================================================================
+   Equipped rig bonuses
+   ========================================================================== */
+
+const RIG_BONUS_KEYS: (keyof RigBonus)[] = [
+  'scanFocusSave',
+  'scanHeatSave',
+  'betFocusSave',
+  'betHeatSave',
+  'readFocusSave',
+  'recoverFocusAdd',
+  'recoverHeatClearAdd',
+  'hedgeHeatClearAdd',
+  'edgeSwingAdd',
+  'feeDiscount',
+  'staleSlipSave',
+  'heatSlipSave',
+  'winXpAdd',
+  'lossXpAdd',
+]
+
+export function equippedRigBonus(): RigBonus {
+  const s = getState()
+  const bonus: RigBonus = {}
+  for (const id of Object.values(s.look)) {
+    if (!id) continue
+    const rig = RIG_BY_ID[id]
+    if (!rig?.bonus) continue
+    for (const key of RIG_BONUS_KEYS) {
+      const value = rig.bonus[key]
+      if (typeof value === 'number') bonus[key] = (bonus[key] ?? 0) + value
+    }
+  }
+  return bonus
+}
+
+function bonusValue(key: keyof RigBonus): number {
+  return equippedRigBonus()[key] ?? 0
+}
+
+function savedCost(base: number, save: number, floor = 0): number {
+  return Math.max(floor, Math.round(base - save))
+}
+
+export function effectiveFeeRate(): number {
+  return Math.max(0.005, BET.fee - bonusValue('feeDiscount'))
+}
+
+export function scanCostWithRig(): { focus: number; heat: number } {
+  const bonus = equippedRigBonus()
+  return {
+    focus: savedCost(MARKET.focusCost, bonus.scanFocusSave ?? 0, 1),
+    heat: savedCost(MARKET.heatCost, bonus.scanHeatSave ?? 0),
+  }
+}
+
+export function marketCostWithRig(def: MarketDef): { focus: number; heat: number } {
+  const bonus = equippedRigBonus()
+  return {
+    focus: savedCost(def.focusCost, bonus.betFocusSave ?? 0, 1),
+    heat: savedCost(def.heatCost, bonus.betHeatSave ?? 0),
+  }
+}
+
+export function deskReadGainWithRig(): Partial<Stats> {
+  const bonus = equippedRigBonus()
+  return {
+    ...DESK_READ.gain,
+    focus: -savedCost(Math.abs(DESK_READ.gain.focus ?? 0), bonus.readFocusSave ?? 0, 1),
+  }
+}
+
+function actionGainWithRig(actionId: string, gain: Partial<Stats>): Partial<Stats> {
+  const bonus = equippedRigBonus()
+  if (actionId === 'recover') {
+    return {
+      ...gain,
+      focus: (gain.focus ?? 0) + (bonus.recoverFocusAdd ?? 0),
+      heat: (gain.heat ?? 0) - (bonus.recoverHeatClearAdd ?? 0),
+    }
+  }
+  if (actionId === 'hedge') {
+    return {
+      ...gain,
+      heat: (gain.heat ?? 0) - (bonus.hedgeHeatClearAdd ?? 0),
+    }
+  }
+  return gain
 }
 
 /* ==========================================================================
@@ -250,7 +342,7 @@ export function doAction(actionId: string): ActionResult {
   }
 
   const s = getState()
-  const gain = def.gain ?? {}
+  const gain = actionGainWithRig(actionId, def.gain ?? {})
   const cash = def.cash ?? 0
   const credits = def.credits ?? 0
 
@@ -341,6 +433,8 @@ export function useSupply(supplyId: string): ActionResult {
 /** The free read. No stash needed, long cooldown, small edge. */
 export function deskRead(): ActionResult {
   const s = getState()
+  const gain = deskReadGainWithRig()
+  const focusCost = Math.abs(gain.focus ?? 0)
   if (!isReady('read')) {
     play('deny')
     say(COPY.cooldown())
@@ -352,10 +446,10 @@ export function deskRead(): ActionResult {
     play('deny')
     return refusal(msg)
   }
-  if (s.stats.focus < 10) return refuse(COPY.noFocus())
+  if (s.stats.focus < focusCost) return refuse(COPY.noFocus())
 
   setState({
-    stats: addStats(DESK_READ.gain),
+    stats: addStats(gain),
     tally: { ...s.tally, researches: s.tally.researches + 1 },
   })
   startActivity('research', DESK_READ.duration)
@@ -364,8 +458,8 @@ export function deskRead(): ActionResult {
   play('eat')
   burst('crumb', { count: 6 })
   buzz('light')
-  showGains(DESK_READ.gain)
-  return { ok: true, message: '', gain: DESK_READ.gain }
+  showGains(gain)
+  return { ok: true, message: '', gain }
 }
 
 /* ==========================================================================
@@ -418,10 +512,11 @@ export function doScan(): ActionResult {
     play('deny')
     return refusal(COPY.cooldown())
   }
-  if (s.stats.focus < MARKET.focusCost) return refuse(COPY.noFocus())
+  const scanCost = scanCostWithRig()
+  if (s.stats.focus < scanCost.focus) return refuse(COPY.noFocus())
 
   const now = Date.now()
-  const gain: Partial<Stats> = { focus: -MARKET.focusCost, heat: MARKET.heatCost }
+  const gain: Partial<Stats> = { focus: -scanCost.focus, heat: scanCost.heat }
 
   setState({
     stats: addStats(gain),
@@ -456,13 +551,15 @@ export function previewFill(
   now = Date.now(),
 ): { price: number; slip: number; payout: number; profit: number; stale: boolean } {
   const s = getState()
+  const bonus = equippedRigBonus()
   const quote = quoteFor(marketId)
   const stale = isStale(quote.quotedAt, now)
   const raw = side === 'yes' ? quote.prob : 1 - quote.prob
 
   const over = Math.max(0, s.stats.heat - BET.heatSlipAt)
-  const heatSlip = (over / (100 - BET.heatSlipAt)) * BET.slipMax
-  const slip = heatSlip + (stale ? MARKET.staleSlip : 0)
+  const heatSlip = Math.max(0, (over / (100 - BET.heatSlipAt)) * BET.slipMax - (bonus.heatSlipSave ?? 0))
+  const staleSlip = stale ? Math.max(0, MARKET.staleSlip - (bonus.staleSlipSave ?? 0)) : 0
+  const slip = heatSlip + staleSlip
   const price = Math.min(0.97, Math.max(0.03, raw + slip))
 
   const payout = stake / price
@@ -483,24 +580,26 @@ export function placeSimBet(marketId: string, side: Side, stake: number): Action
 
   if (!isReady('fill')) return refusal('The last ticket has not printed yet.')
   if (stake > s.bankroll) return refuse(COPY.broke())
-  if (s.stats.focus < def.focusCost) return refuse(COPY.noFocus())
+  const cost = marketCostWithRig(def)
+  if (s.stats.focus < cost.focus) return refuse(COPY.noFocus())
 
   const { price, slip, stale } = previewFill(marketId, side, stake, now)
   const slipped = slip > 0.005
 
   // the coin: the quote, tilted toward his side by Edge. Edge does not buy
   // certainty, it buys a few points — which over enough tickets is the game.
-  const tilt = (s.stats.edge / 100) * BET.edgeSwing
+  const bonus = equippedRigBonus()
+  const tilt = (s.stats.edge / 100) * (BET.edgeSwing + (bonus.edgeSwingAdd ?? 0))
   const trueYes = Math.min(0.97, Math.max(0.03, quoteFor(marketId).prob + (side === 'yes' ? tilt : -tilt)))
   const trueProb = side === 'yes' ? trueYes : 1 - trueYes
   const won = Math.random() < trueProb
 
   const hedged = now < s.hedgeUntil
-  const fee = Math.round(stake * BET.fee * 100) / 100
+  const fee = Math.round(stake * effectiveFeeRate() * 100) / 100
   let raw = won ? stake * (1 / price - 1) : -stake
   if (hedged) raw *= won ? BET.hedgeWinMult : BET.hedgeLossMult
   const pnl = Math.round((raw - fee) * 100) / 100
-  const xpGained = won ? XP.win : XP.loss
+  const xpGained = won ? XP.win + (bonus.winXpAdd ?? 0) : XP.loss + (bonus.lossXpAdd ?? 0)
 
   const result: TradeResult = {
     marketId,
@@ -519,7 +618,7 @@ export function placeSimBet(marketId: string, side: Side, stake: number): Action
 
   // charged now: the focus and heat of actually sizing something up
   setState({
-    stats: addStats({ focus: -def.focusCost, heat: def.heatCost }),
+    stats: addStats({ focus: -cost.focus, heat: cost.heat }),
     lastTrade: null,
   })
 
@@ -653,7 +752,7 @@ export function buyRig(id: string): ActionResult {
 }
 
 /* ==========================================================================
-   The rig — cosmetics only
+   The rig - visible kit with passive bonuses
    ========================================================================== */
 
 export function equipRig(id: string): ActionResult {

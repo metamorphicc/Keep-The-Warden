@@ -7,6 +7,7 @@ import { ParticleSystem } from '../render/particles'
 import { HOTSPOTS, SCENE, drawRoom, drawRoomOverlay, hitTest } from '../render/room'
 import { drawWarden, poseFor } from '../render/warden'
 import { clamp } from '../game/util'
+import { levelFromXp, progressionTierForLevel } from '../game/config'
 
 /* ==========================================================================
    The room stage: one low-res canvas, one requestAnimationFrame loop.
@@ -84,6 +85,7 @@ export function RoomCanvas() {
       // the room darkens while he is out cold in the chair
       const dim = kind === 'recover' ? Math.sin(clamp(phase * 2.4, 0, 1) * Math.PI * 0.5) * 0.55 : 0
       const edge = s.stats.edge / 100
+      const tier = progressionTierForLevel(levelFromXp(s.xp)).tier
 
       const pose = poseFor({ activity: kind, phase, t: reduce ? 1200 : now, stats: s.stats })
 
@@ -92,6 +94,7 @@ export function RoomCanvas() {
         grime,
         dim,
         edge,
+        tier,
         // his shadow walks to the mat with him and thins as he folds up
         heroShift: pose.shift,
         heroShadow: 1 - pose.sit * 0.72,

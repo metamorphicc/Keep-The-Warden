@@ -166,12 +166,12 @@ function drawSideLight(ctx: Ctx, x: number, y: number, flip = false): void {
   px(ctx, x + 3, y + 36, 8, 2, P.plate)
 }
 
-function drawNotesBoard(ctx: Ctx): void {
+function drawNotesBoard(ctx: Ctx, tier: number): void {
   const x = 9
   const y = 36
   outline(ctx, x, y, 32, 55, P.ink, 1)
-  px(ctx, x + 1, y + 1, 30, 53, '#16120d')
-  px(ctx, x + 1, y + 1, 30, 2, P.woodLit)
+  px(ctx, x + 1, y + 1, 30, 53, tier >= 3 ? '#101923' : '#16120d')
+  px(ctx, x + 1, y + 1, 30, 2, tier >= 3 ? P.plateLit : P.woodLit)
   for (let i = 0; i < 7; i++) {
     const nx = x + 4 + (i % 2) * 13
     const ny = y + 6 + Math.floor(i / 2) * 11
@@ -180,6 +180,11 @@ function drawNotesBoard(ctx: Ctx): void {
     px(ctx, nx, ny, 10, 1, '#fff6bf')
     px(ctx, nx + 2, ny + 3, 6, 1, P.ink)
     if (i % 2 === 0) px(ctx, nx + 2, ny + 5, 4, 1, P.ink)
+  }
+  if (tier >= 2) {
+    px(ctx, x + 4, y + 46, 22, 4, P.plateDeep)
+    px(ctx, x + 6, y + 47, 9, 1, P.greenLit)
+    px(ctx, x + 18, y + 47, 5, 1, P.emberLit)
   }
   pxLine(ctx, x + 26, y + 48, x + 39, y + 72, P.plateDark, 2)
 }
@@ -193,7 +198,7 @@ function drawMonitorCase(ctx: Ctx, x: number, y: number, w: number, h: number): 
   px(ctx, x + Math.floor(w / 2) - 8, y + h + 7, 16, 3, P.plateDeep)
 }
 
-function drawMonitorBank(ctx: Ctx): void {
+function drawMonitorBank(ctx: Ctx, tier: number): void {
   for (const m of MONITORS) drawMonitorCase(ctx, m.x, m.y, m.w, m.h)
 
   // a small laptop angled on the right side of the desk
@@ -201,6 +206,72 @@ function drawMonitorBank(ctx: Ctx): void {
   px(ctx, 131, 121, 24, 6, '#07131b')
   px(ctx, 127, 130, 34, 5, P.plate)
   px(ctx, 127, 134, 34, 1, P.ink)
+
+  if (tier >= 3) {
+    // cheap tablet becomes the first visible research upgrade
+    outline(ctx, 45, 112, 20, 14, P.ink, 1)
+    px(ctx, 46, 113, 18, 12, P.plateDark)
+    px(ctx, 48, 115, 14, 7, '#061018')
+    px(ctx, 50, 118, 9, 1, P.tealLit)
+  }
+
+  if (tier >= 4) {
+    outline(ctx, 160, 101, 20, 28, P.ink, 1)
+    px(ctx, 161, 102, 18, 26, P.plateDark)
+    px(ctx, 164, 105, 12, 18, '#061018')
+    px(ctx, 166, 110, 8, 1, P.spiritLit)
+    px(ctx, 166, 116, 6, 1, P.greenLit)
+    px(ctx, 160, 129, 20, 3, P.plate)
+  }
+}
+
+function drawProgressionUpgrades(ctx: Ctx, tier: number): void {
+  if (tier >= 2) {
+    // goal board: the first sign he has a process, not just panic tabs
+    outline(ctx, 145, 36, 32, 21, P.ink, 1)
+    px(ctx, 146, 37, 30, 19, '#101923')
+    px(ctx, 148, 40, 8, 2, P.greenLit)
+    px(ctx, 148, 45, 17, 1, P.plateLit)
+    px(ctx, 148, 49, 22, 1, P.plateLit)
+    px(ctx, 169, 41, 4, 8, P.goldLit)
+  }
+
+  if (tier >= 3) {
+    px(ctx, 43, 19, 106, 4, P.plateDeep)
+    px(ctx, 43, 19, 106, 1, P.plateLit)
+    for (let x = 48; x < 86; x += 7) {
+      px(ctx, x, 13, 4, 6, x % 2 ? P.tealDeep : P.spiritDeep)
+      px(ctx, x, 13, 4, 1, P.plateLit)
+    }
+    px(ctx, 120, 14, 22, 5, P.plateDark)
+    px(ctx, 124, 15, 14, 1, P.goldLit)
+  }
+
+  if (tier >= 4) {
+    px(ctx, 52, 110, 86, 4, '#07131b')
+    for (let x = 55; x < 134; x += 9) px(ctx, x, 111, 4, 1, x % 3 ? P.tealLit : P.greenLit)
+    px(ctx, 30, 116, 13, 16, P.plateDark)
+    outline(ctx, 30, 116, 13, 16, P.ink, 1)
+    px(ctx, 34, 118, 5, 10, P.spiritDeep)
+  }
+
+  if (tier >= 5) {
+    outline(ctx, 12, 96, 23, 22, P.ink, 1)
+    px(ctx, 13, 97, 21, 20, '#0d141c')
+    for (let y = 101; y < 113; y += 5) {
+      px(ctx, 16, y, 14, 2, P.plateDeep)
+      px(ctx, 18, y, 3, 1, P.tealLit)
+    }
+    px(ctx, 94, 24, 15, 3, P.goldDark)
+    px(ctx, 98, 18, 7, 6, P.goldLit)
+  }
+
+  if (tier >= 6) {
+    outline(ctx, 53, 15, 87, 8, P.ink, 1)
+    px(ctx, 54, 16, 85, 6, '#061018')
+    for (let x = 58; x < 134; x += 11) px(ctx, x, 18, 7, 1, x % 2 ? P.greenLit : P.tealLit)
+    pxa(ctx, 48, 24, 96, 36, P.spiritLit, 0.05)
+  }
 }
 
 function drawMiniChart(
@@ -250,11 +321,12 @@ function drawMiniChart(
   pxa(ctx, scan, y + 1, 1, h - 2, color, 0.18 + feed * 0.18)
 }
 
-function drawDesk(ctx: Ctx): void {
+function drawDesk(ctx: Ctx, tier: number): void {
   const y = 133
-  px(ctx, 22, y, 148, 12, P.wood)
-  px(ctx, 22, y, 148, 2, P.woodHi)
-  px(ctx, 22, y + 10, 148, 2, P.woodDeep)
+  const top = tier >= 4 ? P.plateDark : P.wood
+  px(ctx, 22, y, 148, 12, top)
+  px(ctx, 22, y, 148, 2, tier >= 4 ? P.plateLit : P.woodHi)
+  px(ctx, 22, y + 10, 148, 2, tier >= 4 ? P.plateDeep : P.woodDeep)
   outline(ctx, 22, y, 148, 12, P.ink, 1)
 
   // drawers and upgradeable empty bay
@@ -275,6 +347,11 @@ function drawDesk(ctx: Ctx): void {
   px(ctx, 48, y + 4, 15, 9, P.bone)
   px(ctx, 50, y + 7, 10, 1, P.ink)
   px(ctx, 50, y + 10, 7, 1, P.ink)
+  if (tier >= 5) {
+    px(ctx, 116, y + 4, 20, 7, '#0a1118')
+    px(ctx, 119, y + 6, 6, 1, P.greenLit)
+    px(ctx, 128, y + 6, 5, 1, P.tealLit)
+  }
 
   drawCables(ctx)
 }
@@ -439,9 +516,9 @@ function drawForeground(ctx: Ctx): void {
    Static layer cache
    -------------------------------------------------------------------------- */
 
-const staticCache = new Map<number, HTMLCanvasElement>()
+const staticCache = new Map<string, HTMLCanvasElement>()
 
-function buildStatic(grime: number): HTMLCanvasElement {
+function buildStatic(grime: number, tier: number): HTMLCanvasElement {
   const cv = document.createElement('canvas')
   cv.width = SCENE.w
   cv.height = SCENE.h
@@ -454,12 +531,13 @@ function buildStatic(grime: number): HTMLCanvasElement {
   ctx.translate(0, VOID_H)
   drawWall(ctx)
   drawCityWindow(ctx)
+  drawProgressionUpgrades(ctx, tier)
   drawSideLight(ctx, 17, 66)
   drawSideLight(ctx, 161, 66, true)
-  drawNotesBoard(ctx)
-  drawMonitorBank(ctx)
+  drawNotesBoard(ctx, tier)
+  drawMonitorBank(ctx, tier)
   drawSkirting(ctx)
-  drawDesk(ctx)
+  drawDesk(ctx, tier)
   drawFloor(ctx)
   drawChair(ctx)
   drawCoffeeStack(ctx)
@@ -471,11 +549,12 @@ function buildStatic(grime: number): HTMLCanvasElement {
   return cv
 }
 
-function getStatic(grime: number): HTMLCanvasElement {
-  let cv = staticCache.get(grime)
+function getStatic(grime: number, tier: number): HTMLCanvasElement {
+  const key = `${grime}:${tier}`
+  let cv = staticCache.get(key)
   if (!cv) {
-    cv = buildStatic(grime)
-    staticCache.set(grime, cv)
+    cv = buildStatic(grime, tier)
+    staticCache.set(key, cv)
   }
   return cv
 }
@@ -489,13 +568,14 @@ export interface RoomOpts {
   grime: number
   dim: number
   edge: number
+  tier: number
   heroShift?: number
   heroShadow?: number
 }
 
 export function drawRoom(ctx: Ctx, o: RoomOpts): void {
   ctx.imageSmoothingEnabled = false
-  ctx.drawImage(getStatic(o.grime), 0, 0)
+  ctx.drawImage(getStatic(o.grime, o.tier), 0, 0)
 
   const flick = 0.86 + Math.sin(o.t / 180) * 0.08 + Math.sin(o.t / 67) * 0.05
   const lightStrength = (1 - o.dim * 0.72) * flick

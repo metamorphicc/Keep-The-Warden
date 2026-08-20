@@ -1,20 +1,37 @@
 import { useState } from 'react'
 import { ItemSlot } from '../components/ItemSlot'
 import { PixelButton } from '../components/PixelButton'
-import { PixelIcon } from '../components/PixelIcon'
+import { PixelIcon, type IconName } from '../components/PixelIcon'
 import { PixelPanel } from '../components/PixelPanel'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { FloatingTextLayer } from '../components/FloatingTextLayer'
 import { buyRig, buySupply, say } from '../game/actions'
 import { RIGS, SLOT_LABEL, STATS, STAT_ORDER, SUPPLIES, WORLD } from '../game/config'
 import { useGameState } from '../game/store'
-import type { Currency, RigDef, SupplyDef } from '../game/types'
+import type { Currency, RigBonus, RigDef, SupplyDef } from '../game/types'
 
 /* ==========================================================================
    Supply — two shelves: what he reads, and what he wears while reading it.
    ========================================================================== */
 
 type Tab = 'stash' | 'rig'
+
+const RIG_BONUS_TEXT: Record<keyof RigBonus, { label: string; icon: IconName; value: (v: number) => string }> = {
+  scanFocusSave: { label: 'Scan focus', icon: 'dice', value: (v) => `-${v}` },
+  scanHeatSave: { label: 'Scan heat', icon: 'flame', value: (v) => `-${v}` },
+  betFocusSave: { label: 'Ticket focus', icon: 'terminal', value: (v) => `-${v}` },
+  betHeatSave: { label: 'Ticket heat', icon: 'flame', value: (v) => `-${v}` },
+  readFocusSave: { label: 'Read focus', icon: 'stew', value: (v) => `-${v}` },
+  recoverFocusAdd: { label: 'Break focus', icon: 'bed', value: (v) => `+${v}` },
+  recoverHeatClearAdd: { label: 'Break heat clear', icon: 'bed', value: (v) => `+${v}` },
+  hedgeHeatClearAdd: { label: 'Hedge heat clear', icon: 'brush', value: (v) => `+${v}` },
+  edgeSwingAdd: { label: 'Edge swing', icon: 'star', value: (v) => `+${Math.round(v * 1000) / 10}%` },
+  feeDiscount: { label: 'Ticket fee', icon: 'coin', value: (v) => `-${Math.round(v * 1000) / 10}%` },
+  staleSlipSave: { label: 'Stale slip', icon: 'skull', value: (v) => `-${Math.round(v * 100)}c` },
+  heatSlipSave: { label: 'Heat slip', icon: 'flame', value: (v) => `-${Math.round(v * 100)}c` },
+  winXpAdd: { label: 'Win XP', icon: 'star', value: (v) => `+${v}` },
+  lossXpAdd: { label: 'Loss XP', icon: 'star', value: (v) => `+${v}` },
+}
 
 export function ShopScreen() {
   const s = useGameState()
@@ -131,7 +148,18 @@ export function ShopScreen() {
               })}
             </ul>
           ) : (
-            <p className="t-label t-dim">Cosmetic. It will not move a single gauge.</p>
+            <ul className="detail__gains">
+              {Object.entries((active as RigDef).bonus ?? {}).map(([key, value]) => {
+                const meta = RIG_BONUS_TEXT[key as keyof RigBonus]
+                return (
+                  <li key={key} className="is-up">
+                    <PixelIcon name={meta.icon} size={12} />
+                    <span>{meta.label}</span>
+                    <b>{meta.value(value)}</b>
+                  </li>
+                )
+              })}
+            </ul>
           )}
 
           <PixelButton

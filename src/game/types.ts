@@ -100,6 +100,37 @@ export interface SupplyDef {
 
 export type EquipSlot = 'head' | 'cloak' | 'blade'
 
+export interface RigBonus {
+  /** lowers Focus spent on scanning the board */
+  scanFocusSave?: number
+  /** lowers Heat gained from scanning the board */
+  scanHeatSave?: number
+  /** lowers Focus spent when sending a ticket */
+  betFocusSave?: number
+  /** lowers Heat gained when sending a ticket */
+  betHeatSave?: number
+  /** lowers Focus spent by the free rules read */
+  readFocusSave?: number
+  /** adds Focus restored by Break */
+  recoverFocusAdd?: number
+  /** adds extra Heat cleared by Break */
+  recoverHeatClearAdd?: number
+  /** adds extra Heat cleared by Hedge */
+  hedgeHeatClearAdd?: number
+  /** adds to the Edge probability swing, e.g. 0.01 = +1 point at full Edge */
+  edgeSwingAdd?: number
+  /** lowers ticket fee, e.g. 0.002 = 0.2 percentage points */
+  feeDiscount?: number
+  /** lowers stale quote penalty */
+  staleSlipSave?: number
+  /** lowers heat slip penalty */
+  heatSlipSave?: number
+  /** flat XP added to winning fills */
+  winXpAdd?: number
+  /** flat XP added to losing fills */
+  lossXpAdd?: number
+}
+
 export interface RigDef {
   id: string
   name: string
@@ -108,6 +139,7 @@ export interface RigDef {
   price: number
   currency: Currency
   desc: string
+  bonus?: RigBonus
   /** owned from the start */
   starter?: boolean
 }

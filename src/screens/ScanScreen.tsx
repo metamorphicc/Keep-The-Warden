@@ -3,7 +3,7 @@ import { PixelButton } from '../components/PixelButton'
 import { PixelIcon } from '../components/PixelIcon'
 import { PixelPanel } from '../components/PixelPanel'
 import { ScreenHeader } from '../components/ScreenHeader'
-import { boardQuotes, cooldownLeft, doScan, isStale, openBet } from '../game/actions'
+import { boardQuotes, cooldownLeft, doScan, isStale, marketCostWithRig, openBet, scanCostWithRig } from '../game/actions'
 import { MARKET, MARKET_BY_ID, WORLD } from '../game/config'
 import { useGameState } from '../game/store'
 import { formatPrice, formatProb, formatSeconds } from '../game/util'
@@ -21,7 +21,8 @@ export function ScanScreen() {
   const now = Date.now()
   const board = boardQuotes()
   const left = cooldownLeft('scan', now)
-  const broke = s.stats.focus < MARKET.focusCost
+  const scanCost = scanCostWithRig()
+  const broke = s.stats.focus < scanCost.focus
 
   return (
     <div className="screen">
@@ -34,6 +35,7 @@ export function ScanScreen() {
           <ul className="board">
             {board.map((q) => {
               const def = MARKET_BY_ID[q.id]!
+              const cost = marketCostWithRig(def)
               const stale = isStale(q.quotedAt, now)
               return (
                 <li key={q.id}>
@@ -53,7 +55,7 @@ export function ScanScreen() {
                       </span>
                       <span className="mkt__q t-body">{def.question}</span>
                       <span className="mkt__cost t-label t-dim">
-                        {def.focusCost} focus · {def.heatCost} heat
+                        {cost.focus} focus · {cost.heat} heat
                       </span>
                     </span>
 
@@ -84,7 +86,7 @@ export function ScanScreen() {
           sublabel={
             left > 0
               ? formatSeconds(left)
-              : `Costs ${MARKET.focusCost} focus · +${MARKET.heatCost} heat`
+              : `Costs ${scanCost.focus} focus · +${scanCost.heat} heat`
           }
           onClick={() => doScan()}
         />

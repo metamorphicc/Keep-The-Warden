@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { levelFromXp, progressionTierForLevel } from '../game/config'
 import { getState } from '../game/store'
 import { dither, px, pxa, pxLine, type Ctx } from '../render/draw'
 import { drawWardenPortrait } from '../render/warden'
@@ -40,7 +41,8 @@ export function WardenPlinth({
       // read live so equipping a piece shows up on the very next frame
       const s = getState()
       const t = s.settings.reduceMotion ? 1200 : now
-      drawAlcove(ctx, width, height, t)
+      const tier = progressionTierForLevel(levelFromXp(s.xp)).tier
+      drawAlcove(ctx, width, height, t, tier)
       drawWardenPortrait(ctx, width / 2, height - 8, s.look, t, s.stats)
     }
     raf = requestAnimationFrame(frame)
@@ -51,7 +53,7 @@ export function WardenPlinth({
 }
 
 /** Wardrobe preview: mirror, clothes rail, shelves, boxes, and a clean step. */
-function drawAlcove(ctx: Ctx, w: number, h: number, t: number): void {
+function drawAlcove(ctx: Ctx, w: number, h: number, t: number, tier: number): void {
   px(ctx, 0, 0, w, h, '#070a0f')
 
   // matte closet wall, not wooden planks
@@ -79,7 +81,10 @@ function drawAlcove(ctx: Ctx, w: number, h: number, t: number): void {
     { x: 58, w: 10, c: '#1d2935', lit: '#344457' },
     { x: 83, w: 9, c: '#d7dccf', lit: P.white },
     { x: 95, w: 10, c: '#203049', lit: '#3b516d' },
-  ] as const
+    ...(tier >= 2 ? [{ x: 72, w: 8, c: '#314052', lit: P.plateLit }] : []),
+    ...(tier >= 4 ? [{ x: 32, w: 8, c: '#111820', lit: P.tealDeep }] : []),
+    ...(tier >= 5 ? [{ x: 112, w: 9, c: '#16273a', lit: P.spiritDeep }] : []),
+  ]
   for (const item of clothes) {
     pxLine(ctx, item.x + Math.floor(item.w / 2), 17, item.x + Math.floor(item.w / 2) - 3, 21, P.plateLit, 1)
     px(ctx, item.x + sway, 21, item.w, 34, item.c)
@@ -96,6 +101,19 @@ function drawAlcove(ctx: Ctx, w: number, h: number, t: number): void {
   px(ctx, 38, 71, 8, 1, P.goldLit)
   px(ctx, 61, 71, 9, 1, P.tealLit)
   px(ctx, 100, 70, 8, 1, P.spiritLit)
+  if (tier >= 3) {
+    px(ctx, 80, 68, 12, 10, '#0c141d')
+    px(ctx, 83, 70, 6, 1, P.greenLit)
+    px(ctx, 83, 73, 5, 1, P.tealLit)
+  }
+  if (tier >= 5) {
+    px(ctx, 18, 76, 13, 5, P.plateDark)
+    px(ctx, 21, 74, 7, 2, P.goldLit)
+  }
+  if (tier >= 6) {
+    pxa(ctx, 35, 18, 80, 50, P.spiritLit, 0.04 + Math.sin(t / 700) * 0.01)
+    px(ctx, 40, 9, 68, 2, P.tealLit)
+  }
 
   // floor step
   px(ctx, 0, h - 14, w, 14, P.stoneDark)

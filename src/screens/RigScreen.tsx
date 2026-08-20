@@ -12,8 +12,8 @@ import type { EquipSlot } from '../game/types'
 
 /* ==========================================================================
    The rig — pick a look. Locked pieces stay visible, chained shut, so the
-   player can see what the supply shelf is for. Cosmetic only: no piece of kit
-   moves a gauge, and none of it makes him a better trader.
+   player can see what the supply shelf is for. Equipped kit now carries small
+   passive bonuses, but none of it makes him a trader without clean decisions.
    ========================================================================== */
 
 const SLOTS: EquipSlot[] = ['head', 'cloak', 'blade']

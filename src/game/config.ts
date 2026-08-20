@@ -386,6 +386,15 @@ export const CAREER_MILESTONES = [
   { min: 26, title: 'Quant Trader' },
 ] as const
 
+export const PROGRESSION_TIERS = [
+  { tier: 1, min: 1, status: 'Bare Desk', room: 'Starter closet desk' },
+  { tier: 2, min: 6, status: 'First Routine', room: 'Cleaner desk corner' },
+  { tier: 3, min: 11, status: 'Research Setup', room: 'Monitor nook' },
+  { tier: 4, min: 16, status: 'Junior Seat', room: 'Serious workstation' },
+  { tier: 5, min: 21, status: 'Desk Seat', room: 'Pro apartment desk' },
+  { tier: 6, min: 26, status: 'Quant Pit', room: 'City trading room' },
+] as const
+
 export function xpForLevel(level: number): number {
   if (level <= 1) return 0
   if (level > LEVEL_MAX) return xpForLevel(LEVEL_MAX)
@@ -407,6 +416,20 @@ export function careerStatusForLevel(level: number): string {
     if (safeLevel >= milestone.min) status = milestone.title
   }
   return status
+}
+
+export function progressionTierForLevel(level: number): (typeof PROGRESSION_TIERS)[number] {
+  const safeLevel = Math.max(1, Math.min(LEVEL_MAX, Math.floor(level)))
+  let tier: (typeof PROGRESSION_TIERS)[number] = PROGRESSION_TIERS[0]
+  for (const item of PROGRESSION_TIERS) {
+    if (safeLevel >= item.min) tier = item
+  }
+  return tier
+}
+
+export function nextProgressionTier(level: number): (typeof PROGRESSION_TIERS)[number] | null {
+  const safeLevel = Math.max(1, Math.min(LEVEL_MAX, Math.floor(level)))
+  return PROGRESSION_TIERS.find((item) => item.min > safeLevel) ?? null
 }
 
 export function xpProgress(xp: number): { level: number; current: number; needed: number; pct: number } {
@@ -529,27 +552,30 @@ export const RIGS: RigDef[] = [
     name: 'Quant Visor',
     slot: 'head',
     icon: 'helm',
-    price: 40,
+    price: 420,
     currency: 'bankroll',
-    desc: 'Keeps the glare down and the doubts out.',
+    desc: 'Cheap blue-light visor. Mostly placebo, but he reads the board cleaner.',
+    bonus: { scanFocusSave: 1, readFocusSave: 1 },
   },
   {
     id: 'head_antler',
     name: 'Antenna Rig',
     slot: 'head',
     icon: 'antler',
-    price: 85,
+    price: 780,
     currency: 'bankroll',
-    desc: 'Picks up nothing. He swears it front-runs the news.',
+    desc: 'A ridiculous signal crown for stale books and crowded questions.',
+    bonus: { staleSlipSave: 0.01, edgeSwingAdd: 0.004 },
   },
   {
     id: 'head_crown',
     name: 'Whale Crown',
     slot: 'head',
     icon: 'crown',
-    price: 6,
+    price: 14,
     currency: 'credits',
-    desc: 'Worn by someone who exited at the top. Once.',
+    desc: 'Worn by someone who exited at the top. Once. Makes wins travel further.',
+    bonus: { winXpAdd: 12, edgeSwingAdd: 0.006 },
   },
   // ---- coat ----
   {
@@ -567,27 +593,30 @@ export const RIGS: RigDef[] = [
     name: 'Nightdesk Coat',
     slot: 'cloak',
     icon: 'cloak',
-    price: 55,
+    price: 460,
     currency: 'bankroll',
-    desc: 'Teal wool, thick as guilt. Standard issue, long discontinued.',
+    desc: 'A warmer layer for long sessions. Breaks actually feel like breaks.',
+    bonus: { recoverFocusAdd: 6, recoverHeatClearAdd: 4 },
   },
   {
     id: 'cloak_pelt',
     name: 'Drawdown Pelt',
     slot: 'cloak',
     icon: 'pelt',
-    price: 95,
+    price: 860,
     currency: 'bankroll',
-    desc: 'Whatever wore it first also got liquidated.',
+    desc: 'Ugly, heavy, useful. Keeps panic heat from eating every ticket.',
+    bonus: { hedgeHeatClearAdd: 6, betHeatSave: 1 },
   },
   {
     id: 'cloak_ember',
     name: 'Liquidation Drape',
     slot: 'cloak',
     icon: 'cloak',
-    price: 5,
+    price: 12,
     currency: 'credits',
-    desc: 'Smoulders faintly. He calls that a feature.',
+    desc: 'Smoulders faintly. Somehow makes bad fills a little less educationally useless.',
+    bonus: { lossXpAdd: 6, heatSlipSave: 0.008 },
   },
   // ---- desk tools ----
   {
@@ -601,22 +630,54 @@ export const RIGS: RigDef[] = [
     starter: true,
   },
   {
+    id: 'blade_calc',
+    name: 'Pocket Calculator',
+    slot: 'blade',
+    icon: 'gear',
+    price: 360,
+    currency: 'bankroll',
+    desc: 'The first real tool after the old keyboard. Saves just enough brain to matter.',
+    bonus: { betFocusSave: 1, readFocusSave: 1 },
+  },
+  {
     id: 'blade_spirit',
     name: 'Chart Pad',
     slot: 'blade',
     icon: 'swordBlue',
-    price: 70,
+    price: 520,
     currency: 'bankroll',
-    desc: 'A small screen for sketches, signals, and bad ideas made visible.',
+    desc: 'A second surface for sketches, signals, and bad ideas made visible.',
+    bonus: { scanFocusSave: 2, scanHeatSave: 1 },
+  },
+  {
+    id: 'blade_macropad',
+    name: 'Used Macro Pad',
+    slot: 'blade',
+    icon: 'terminal',
+    price: 680,
+    currency: 'bankroll',
+    desc: 'Half the keys are custom, half are cursed. Tickets print with less friction.',
+    bonus: { betFocusSave: 1, feeDiscount: 0.002 },
+  },
+  {
+    id: 'blade_depth',
+    name: 'Depth Screen',
+    slot: 'blade',
+    icon: 'dice',
+    price: 940,
+    currency: 'bankroll',
+    desc: 'Tiny order-book theater. Helps heat slip stop pretending to be destiny.',
+    bonus: { betHeatSave: 2, heatSlipSave: 0.012 },
   },
   {
     id: 'blade_ember',
     name: 'Risk Tablet',
     slot: 'blade',
     icon: 'swordRed',
-    price: 4,
+    price: 10,
     currency: 'credits',
-    desc: 'Warm to touch. Warmer after the third martingale.',
+    desc: 'Warm to touch. Warmer after the third martingale. Good at saying no.',
+    bonus: { betHeatSave: 2, hedgeHeatClearAdd: 5, feeDiscount: 0.003 },
   },
 ]
 

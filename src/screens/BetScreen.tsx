@@ -7,6 +7,8 @@ import { ScreenHeader } from '../components/ScreenHeader'
 import {
   isReady,
   isStale,
+  effectiveFeeRate,
+  marketCostWithRig,
   placeSimBet,
   previewFill,
   quoteFor,
@@ -37,12 +39,14 @@ export function BetScreen() {
   const stale = isStale(quote.quotedAt)
 
   const fill = previewFill(def.id, side ?? 'yes', stake)
+  const cost = marketCostWithRig(def)
+  const feeRate = effectiveFeeRate()
   const trade = s.lastTrade
   const resolving = s.activity.kind === 'bet'
   const hedged = Date.now() < s.hedgeUntil
 
   const affordable = stake <= s.bankroll
-  const focused = s.stats.focus >= def.focusCost
+  const focused = s.stats.focus >= cost.focus
   const canFill = side !== null && affordable && focused && !resolving && isReady('fill')
 
   // whatever the machine should be showing right now
@@ -196,7 +200,7 @@ export function BetScreen() {
             <li className={side ? 'is-up' : ''}>
               <PixelIcon name="star" size={12} />
               <span>If it lands</span>
-              <b>{formatSigned(Math.round(fill.profit - stake * BET.fee))}</b>
+              <b>{formatSigned(Math.round(fill.profit - stake * feeRate))}</b>
             </li>
             <li className="is-down">
               <PixelIcon name="skull" size={12} />
@@ -236,7 +240,7 @@ export function BetScreen() {
             size="lg"
             full
             disabled={!canFill}
-            sublabel={`Fee ${Math.round(BET.fee * 100)}% · costs ${def.focusCost} focus`}
+            sublabel={`Fee ${Math.round(feeRate * 1000) / 10}% · costs ${cost.focus} focus`}
             onClick={submit}
           />
         </PixelPanel>
