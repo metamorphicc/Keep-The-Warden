@@ -9,11 +9,11 @@ import { WardenPlinth } from '../components/WardenPlinth'
 import { isAlarming, renameWarden, setScreen } from '../game/actions'
 import {
   BANKROLL_BAR,
+  DESK_STAT_ORDER,
   NAME_MAX,
   RIG_BY_ID,
   SLOT_LABEL,
   STATS,
-  STAT_ORDER,
   WORLD,
   careerStatusForLevel,
   xpProgress,
@@ -106,6 +106,7 @@ export function ProfileScreen() {
         >
           <ul className="detail__gains detail__gains--text">
             <Row label="Status" value={career} icon="warden" />
+            <Row label="Reputation" value={`${Math.round(s.stats.rep)}/100`} icon="star" />
             <Row
               label="Next step"
               value={xp.level >= 30 ? 'capped' : `${xp.current}/${xp.needed} XP`}
@@ -121,6 +122,15 @@ export function ProfileScreen() {
             valueText={xp.level >= 30 ? 'MAX' : `${xp.pct}%`}
             showValue
           />
+          <PixelBar
+            label="Rep"
+            icon="star"
+            value={s.stats.rep}
+            color={STATS.rep.color}
+            colorDark={STATS.rep.colorDark}
+            valueText={`${Math.round(s.stats.rep)}`}
+            showValue
+          />
         </PixelPanel>
 
         <PixelPanel
@@ -132,7 +142,7 @@ export function ProfileScreen() {
           titleRight={<span className="t-label t-dim">{form}%</span>}
         >
           <div className="profile__bars">
-            {STAT_ORDER.map((key) => {
+            {DESK_STAT_ORDER.map((key) => {
               const meta = STATS[key]
               const value = s.stats[key]
               return (

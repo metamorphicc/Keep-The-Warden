@@ -240,7 +240,7 @@ export interface GameState extends SaveData {
   focusMarket: string | null
   /** the last resolved position, for the bet screen's result panel */
   lastTrade: TradeResult | null
-  /** rep gained from tapping in the current window (soft cap) */
+  /** PnL checks in the current anti-spam window */
   tapWindow: { since: number; gained: number }
 }
 

@@ -12,8 +12,8 @@ import {
   ACTION_BAR,
   ACTIONS,
   BANKROLL_BAR,
+  DESK_STAT_ORDER,
   STATS,
-  STAT_ORDER,
   WORLD,
   careerStatusForLevel,
   levelFromXp,
@@ -67,7 +67,7 @@ export function RoomScreen() {
       <div className="room__hud">
         <PixelPanel variant="darkwood" pad="sm" rivets>
           <div className="room__bars">
-            {STAT_ORDER.map((key) => {
+            {DESK_STAT_ORDER.map((key) => {
               const meta = STATS[key]
               const value = s.stats[key]
               return (

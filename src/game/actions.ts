@@ -593,9 +593,8 @@ function resolveFill(result: TradeResult): void {
     setState((st) => ({
       bankroll: Math.round((st.bankroll + BET.bailout.grant) * 100) / 100,
     }))
-    setState({ stats: addStats({ rep: BET.bailout.rep }) })
-    toast('The desk floats you', 'plain', `${formatCash(BET.bailout.grant)} against your name`)
-    say('"Stake money. It is on the book, and so are you."')
+    toast('The desk floats you', 'plain', `${formatCash(BET.bailout.grant)} to keep trading`)
+    say('"Stake money. It is on the book. Try not to need it twice."')
   }
 }
 

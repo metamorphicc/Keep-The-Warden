@@ -68,6 +68,7 @@ export const WORLD = {
    ========================================================================== */
 
 export const STAT_ORDER: StatKey[] = ['edge', 'focus', 'heat', 'rep']
+export const DESK_STAT_ORDER: StatKey[] = ['edge', 'focus', 'heat']
 
 export const STATS: Record<StatKey, StatMeta> = {
   edge: {
@@ -356,14 +357,14 @@ export const BET = {
   slipMax: 0.06,
   /** how long the "resolving" beat lasts */
   resolveDelayMs: 1700,
-  win: { rep: 5, heat: 7, focus: -4, edge: -2 },
-  loss: { rep: -3, heat: 12, focus: -10, edge: -2 },
+  win: { heat: 7, focus: -4, edge: -2 },
+  loss: { heat: 12, focus: -10, edge: -2 },
   /** the hedge dampens the next fill in both directions */
   hedgeWindowMs: 100_000,
   hedgeWinMult: 0.7,
   hedgeLossMult: 0.55,
   /** the desk floats him again rather than ending the game */
-  bailout: { floor: 10, grant: 25, rep: -8 },
+  bailout: { floor: 10, grant: 25 },
 }
 
 /* ==========================================================================
