@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { CurrencyBar } from '../components/CurrencyBar'
 import { FloatingTextLayer } from '../components/FloatingTextLayer'
 import { PixelBar } from '../components/PixelBar'
@@ -7,19 +8,21 @@ import { PixelPanel } from '../components/PixelPanel'
 import { Ribbon } from '../components/Ribbon'
 import { RoomCanvas } from '../components/RoomCanvas'
 import { SpeechBox } from '../components/SpeechBox'
-import { cooldownLeft, doAction, isAlarming, setScreen, statusLine } from '../game/actions'
+import { completeOnboarding, cooldownLeft, doAction, isAlarming, setScreen, statusLine } from '../game/actions'
 import {
   ACTIONS,
   BANKROLL_BAR,
   DESK_STAT_ORDER,
   STAT_HIGH,
   STATS,
+  TRADER_CLASSES,
   WORLD,
   careerStatusForLevel,
   levelFromXp,
 } from '../game/config'
 import { bankrollHealth, useGameState } from '../game/store'
 import { formatCash, formatSeconds } from '../game/util'
+import type { TraderClassId } from '../game/types'
 
 /* ==========================================================================
    The pit — the whole game in one screen.
@@ -27,8 +30,49 @@ import { formatCash, formatSeconds } from '../game/util'
    thumb.
    ========================================================================== */
 
+type TutorialTarget = 'status' | 'stats' | 'ticket' | 'tools' | 'utilities' | 'class'
+
+const TUTORIAL_STEPS: {
+  target: TutorialTarget
+  title: string
+  body: string
+}[] = [
+  {
+    target: 'status',
+    title: 'This line is your next move.',
+    body: 'When the desk is calm it says no open ticket. If Heat spikes, Focus crashes, or bankroll hits zero, this line tells you what to fix first.',
+  },
+  {
+    target: 'stats',
+    title: 'These bars are the run.',
+    body: 'Edge improves your odds. Focus pays for actions. Heat makes fills worse when it gets high. Bankroll is your simulated cash.',
+  },
+  {
+    target: 'ticket',
+    title: 'Ticket is the main button.',
+    body: 'A ticket is a simulated trade. Wins pay normal XP, losses still teach him, but much slower.',
+  },
+  {
+    target: 'tools',
+    title: 'Research, Hedge, Break.',
+    body: 'Research builds Edge. Hedge dampens the next fill. Break restores Focus and cools Heat. Use these before forcing another ticket.',
+  },
+  {
+    target: 'utilities',
+    title: 'Board and Side Job stay nearby.',
+    body: 'Board scans markets. Side Job earns a little cash if the book gets wiped out. It is ugly work, but it keeps the game recoverable.',
+  },
+  {
+    target: 'class',
+    title: 'Pick the trader he starts as.',
+    body: 'Your class gives a small stat boost, better odds in one market category, and makes those markets appear more often on the board.',
+  },
+]
+
 export function RoomScreen() {
   const s = useGameState()
+  const [tutorialStep, setTutorialStep] = useState(0)
+  const [pickedClass, setPickedClass] = useState<TraderClassId>('crypto')
   const now = Date.now()
   const day = Math.max(1, Math.floor((now - s.firstVisit) / 86_400_000) + 1)
   const stashCount = Object.values(s.stash).reduce((a, b) => a + b, 0)
@@ -40,6 +84,8 @@ export function RoomScreen() {
   const heatHigh = s.stats.heat >= STAT_HIGH
   const focusLow = s.stats.focus < 28
   const primaryId = broke ? 'sidejob' : 'bet'
+  const tutorialOpen = !s.onboarded
+  const tutorial = TUTORIAL_STEPS[Math.min(tutorialStep, TUTORIAL_STEPS.length - 1)]!
 
   const plainStatus = (() => {
     if (broke) return 'Bankroll is gone. Take a side job.'
@@ -114,7 +160,7 @@ export function RoomScreen() {
   }
 
   return (
-    <div className="screen room">
+    <div className={`screen room ${tutorialOpen ? 'is-tutorial' : ''}`}>
       <header className="room__bar">
         <Ribbon size="sm">{WORLD.hall}</Ribbon>
         <span className="t-label t-dim room__day">Day {day}</span>
@@ -143,12 +189,19 @@ export function RoomScreen() {
       </div>
 
       <div className="room__hud">
-        <div className={`room__status ${broke ? 'is-broke' : ''}`}>
+        <div
+          className={`room__status ${broke ? 'is-broke' : ''} ${tutorial.target === 'status' ? 'is-tutorial-target' : ''}`}
+        >
           <span className="room__status-text">{plainStatus}</span>
           {renderAction('scan', { utility: true })}
         </div>
 
-        <PixelPanel variant="darkwood" pad="sm" rivets>
+        <PixelPanel
+          variant="darkwood"
+          pad="sm"
+          rivets
+          className={tutorial.target === 'stats' ? 'is-tutorial-target' : ''}
+        >
           <div className="room__bars">
             <div className="room__bars-head" aria-hidden="true">
               <span>Stat</span>
@@ -187,15 +240,19 @@ export function RoomScreen() {
         </PixelPanel>
 
         <div className={`room__trade-actions ${broke ? 'is-broke' : ''}`}>
-          {renderAction(primaryId, { primary: true })}
+          <div className={tutorial.target === 'ticket' ? 'is-tutorial-target' : ''}>
+            {renderAction(primaryId, { primary: true })}
+          </div>
           {!broke ? (
-            <div className="room__support-actions">
+            <div className={`room__support-actions ${tutorial.target === 'tools' ? 'is-tutorial-target' : ''}`}>
               {renderAction('research')}
               {renderAction('hedge')}
               {renderAction('recover')}
             </div>
           ) : (
-            <div className="room__support-actions room__support-actions--broke">
+            <div
+              className={`room__support-actions room__support-actions--broke ${tutorial.target === 'tools' ? 'is-tutorial-target' : ''}`}
+            >
               {renderAction('bet')}
               {renderAction('research')}
               {renderAction('hedge')}
@@ -204,7 +261,11 @@ export function RoomScreen() {
           )}
         </div>
 
-        {!broke ? <div className="room__sidejob-row">{renderAction('sidejob', { secondary: true })}</div> : null}
+        {!broke ? (
+          <div className={`room__sidejob-row ${tutorial.target === 'utilities' ? 'is-tutorial-target' : ''}`}>
+            {renderAction('sidejob', { secondary: true })}
+          </div>
+        ) : null}
 
         <nav className="room__nav">
           <button type="button" className="navbtn" onClick={() => setScreen('shop')}>
@@ -225,6 +286,61 @@ export function RoomScreen() {
           </button>
         </nav>
       </div>
+
+      {tutorialOpen ? (
+        <div className={`tutorial tutorial--${tutorial.target}`} role="dialog" aria-modal="true">
+          <div className="tutorial__scrim" aria-hidden="true" />
+          {tutorial.target !== 'class' ? <div className="tutorial__arrow" aria-hidden="true" /> : null}
+          <div className="tutorial__panel">
+            <div className="tutorial__portrait" aria-hidden="true">
+              <PixelIcon name="warden" size={28} />
+            </div>
+            <div className="tutorial__copy">
+              <p className="tutorial__name">Max</p>
+              <h2>{tutorial.title}</h2>
+              <p>{tutorial.body}</p>
+              {tutorial.target === 'class' ? (
+                <div className="classpick classpick--tutorial">
+                  {TRADER_CLASSES.map((klass) => (
+                    <button
+                      key={klass.id}
+                      type="button"
+                      className={`classpick__item ${pickedClass === klass.id ? 'is-on' : ''}`}
+                      onClick={() => setPickedClass(klass.id)}
+                      aria-pressed={pickedClass === klass.id}
+                    >
+                      <PixelIcon name={klass.icon} size={20} />
+                      <span>
+                        <b>{klass.name}</b>
+                        <small>{klass.desc}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <div className="tutorial__actions">
+              <span className="tutorial__count">
+                {tutorialStep + 1}/{TUTORIAL_STEPS.length}
+              </span>
+              <PixelButton
+                label={
+                  tutorial.target === 'class'
+                    ? `Start as ${TRADER_CLASSES.find((klass) => klass.id === pickedClass)?.short ?? 'Trader'}`
+                    : 'Next'
+                }
+                icon={tutorial.target === 'class' ? 'check' : 'plus'}
+                variant={tutorial.target === 'class' ? 'gold' : 'teal'}
+                size="sm"
+                onClick={() => {
+                  if (tutorial.target === 'class') completeOnboarding(pickedClass)
+                  else setTutorialStep((n) => Math.min(n + 1, TUTORIAL_STEPS.length - 1))
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

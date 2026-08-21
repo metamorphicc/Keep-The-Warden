@@ -6,6 +6,8 @@ import type {
   StatKey,
   StatMeta,
   SupplyDef,
+  TraderClassDef,
+  TraderClassId,
 } from './types'
 import { P } from '../styles/palette'
 import type { IconName } from '../components/PixelIcon'
@@ -27,7 +29,7 @@ export const GAME_VERSION = '2.0.0'
 export const SAVE_KEY_PREFIX = 'ktw.save.v1:'
 export const SAVE_KEY_LEGACY = 'ktw.save.v1'
 export const CLOUD_SAVE_KEY = 'ktw_save_v1'
-export const SAVE_VERSION = 6
+export const SAVE_VERSION = 7
 
 /** Longest name the player may give him. */
 export const NAME_MAX = 18
@@ -137,6 +139,71 @@ export const MAX_OFFLINE_HOURS = 36
  * exempt: cooling all the way down while away is the reward for leaving.
  */
 export const OFFLINE_FLOOR = 18
+
+/* ==========================================================================
+   Trader classes
+   ========================================================================== */
+
+export const TRADER_CLASSES: TraderClassDef[] = [
+  {
+    id: 'crypto',
+    name: 'Crypto Trader',
+    short: 'Crypto',
+    icon: 'coin',
+    marketBias: 'crypto',
+    statBoost: { edge: 4, focus: 2, heat: 4 },
+    winBonus: 0.035,
+    desc: 'Better at spot coins, ETFs and chain narratives. Runs a little hotter.',
+  },
+  {
+    id: 'sports',
+    name: 'Sports Trader',
+    short: 'Sports',
+    icon: 'star',
+    marketBias: 'sports',
+    statBoost: { edge: 3, focus: 7 },
+    winBonus: 0.035,
+    desc: 'Reads schedules and public overreaction. Strong focus, cleaner sports fills.',
+  },
+  {
+    id: 'perps',
+    name: 'Perp Trader',
+    short: 'Perps',
+    icon: 'bolt',
+    marketBias: 'perps',
+    statBoost: { edge: 5, focus: -2, heat: 8 },
+    winBonus: 0.04,
+    desc: 'Built for liquidations, funding and leverage. More edge, more heat.',
+  },
+  {
+    id: 'politics',
+    name: 'Politics Trader',
+    short: 'Politics',
+    icon: 'gear',
+    marketBias: 'politics',
+    statBoost: { edge: 6, focus: 1, heat: 2 },
+    winBonus: 0.035,
+    desc: 'Polls, timelines and procedural weirdness. Starts with the best raw Edge.',
+  },
+  {
+    id: 'general',
+    name: 'General Trader',
+    short: 'General',
+    icon: 'dice',
+    marketBias: 'culture',
+    statBoost: { edge: 2, focus: 5, heat: -3 },
+    winBonus: 0.03,
+    desc: 'Normie markets: awards, media, public events. Calm, flexible, less spiky.',
+  },
+]
+
+export const TRADER_CLASS_BY_ID: Record<TraderClassId, TraderClassDef> = Object.fromEntries(
+  TRADER_CLASSES.map((c) => [c.id, c]),
+) as Record<TraderClassId, TraderClassDef>
+
+export function traderClassById(id: TraderClassId | null | undefined): TraderClassDef | null {
+  return id ? (TRADER_CLASS_BY_ID[id] ?? null) : null
+}
 
 /* ==========================================================================
    Actions
@@ -269,6 +336,7 @@ export const MARKETS: MarketDef[] = [
   {
     id: 'btc120',
     question: 'Will BTC close above 120k this month?',
+    category: 'crypto',
     tag: 'BTC',
     icon: 'coin',
     base: 0.42,
@@ -280,6 +348,7 @@ export const MARKETS: MarketDef[] = [
   {
     id: 'ethbtc',
     question: 'Will ETH outperform BTC this week?',
+    category: 'crypto',
     tag: 'ETH',
     icon: 'shard',
     base: 0.47,
@@ -291,6 +360,7 @@ export const MARKETS: MarketDef[] = [
   {
     id: 'fedhike',
     question: 'Fed hike before October?',
+    category: 'politics',
     tag: 'MACRO',
     icon: 'gear',
     base: 0.23,
@@ -302,6 +372,7 @@ export const MARKETS: MarketDef[] = [
   {
     id: 'soletf',
     question: 'Solana ETF approved this year?',
+    category: 'crypto',
     tag: 'ETF',
     icon: 'star',
     base: 0.31,
@@ -313,6 +384,7 @@ export const MARKETS: MarketDef[] = [
   {
     id: 'gasunder',
     question: 'Gas under 5 gwei for a full day?',
+    category: 'crypto',
     tag: 'CHAIN',
     icon: 'bolt',
     base: 0.56,
@@ -324,6 +396,7 @@ export const MARKETS: MarketDef[] = [
   {
     id: 'rugweek',
     question: 'Another top-50 token down 40% this week?',
+    category: 'perps',
     tag: 'RISK',
     icon: 'skull',
     base: 0.61,
@@ -331,6 +404,150 @@ export const MARKETS: MarketDef[] = [
     focusCost: 4,
     heatCost: 5,
     blurb: 'The house always has a favourite in this one.',
+  },
+  {
+    id: 'fundingflip',
+    question: 'Will BTC perp funding flip negative today?',
+    category: 'perps',
+    tag: 'FUNDING',
+    icon: 'bolt',
+    base: 0.38,
+    drift: 0.17,
+    focusCost: 4,
+    heatCost: 5,
+    blurb: 'The crowd is one wick away from discovering humility.',
+  },
+  {
+    id: 'liqcascade',
+    question: 'Will total liquidations clear $500M in 24h?',
+    category: 'perps',
+    tag: 'LIQS',
+    icon: 'flame',
+    base: 0.34,
+    drift: 0.18,
+    focusCost: 5,
+    heatCost: 6,
+    blurb: 'Leverage does not leave quietly. It leaves in screenshots.',
+  },
+  {
+    id: 'openinterest',
+    question: 'Will open interest hit a monthly high this week?',
+    category: 'perps',
+    tag: 'OI',
+    icon: 'terminal',
+    base: 0.49,
+    drift: 0.12,
+    focusCost: 4,
+    heatCost: 4,
+    blurb: 'The room gets crowded before anyone admits it is crowded.',
+  },
+  {
+    id: 'finalsover',
+    question: 'Will the finals game go over the closing total?',
+    category: 'sports',
+    tag: 'NBA',
+    icon: 'star',
+    base: 0.5,
+    drift: 0.09,
+    focusCost: 3,
+    heatCost: 3,
+    blurb: 'Public money loves points. Points sometimes love overtime.',
+  },
+  {
+    id: 'underdogwin',
+    question: 'Will a top underdog win outright this weekend?',
+    category: 'sports',
+    tag: 'DOG',
+    icon: 'skull',
+    base: 0.29,
+    drift: 0.12,
+    focusCost: 4,
+    heatCost: 4,
+    blurb: 'The upset price is mostly fear with a box score attached.',
+  },
+  {
+    id: 'strikergoal',
+    question: 'Will the star striker score before halftime?',
+    category: 'sports',
+    tag: 'GOAL',
+    icon: 'bolt',
+    base: 0.36,
+    drift: 0.11,
+    focusCost: 3,
+    heatCost: 3,
+    blurb: 'One hamstring rumor moves the whole room by five cents.',
+  },
+  {
+    id: 'electionpoll',
+    question: 'Will the next national poll show a lead change?',
+    category: 'politics',
+    tag: 'POLL',
+    icon: 'gear',
+    base: 0.44,
+    drift: 0.1,
+    focusCost: 4,
+    heatCost: 3,
+    blurb: 'The crosstabs are boring until they are suddenly the trade.',
+  },
+  {
+    id: 'billvote',
+    question: 'Will the bill pass committee this week?',
+    category: 'politics',
+    tag: 'VOTE',
+    icon: 'mask',
+    base: 0.58,
+    drift: 0.11,
+    focusCost: 5,
+    heatCost: 4,
+    blurb: 'Procedure is a market inefficiency wearing a suit.',
+  },
+  {
+    id: 'debatebump',
+    question: 'Will the debate winner gain in markets overnight?',
+    category: 'politics',
+    tag: 'DEBATE',
+    icon: 'torch',
+    base: 0.52,
+    drift: 0.14,
+    focusCost: 4,
+    heatCost: 4,
+    blurb: 'Everyone says vibes do not matter. Everyone prices them anyway.',
+  },
+  {
+    id: 'oscars',
+    question: 'Will the favorite win Best Picture?',
+    category: 'culture',
+    tag: 'OSCAR',
+    icon: 'crown',
+    base: 0.63,
+    drift: 0.08,
+    focusCost: 3,
+    heatCost: 2,
+    blurb: 'A normal market, somehow full of very abnormal certainty.',
+  },
+  {
+    id: 'streaminghit',
+    question: 'Will the new series hit #1 this weekend?',
+    category: 'culture',
+    tag: 'MEDIA',
+    icon: 'terminal',
+    base: 0.46,
+    drift: 0.1,
+    focusCost: 3,
+    heatCost: 2,
+    blurb: 'The trailer numbers are fake until they pay.',
+  },
+  {
+    id: 'weatherdelay',
+    question: 'Will bad weather delay the big live event?',
+    category: 'culture',
+    tag: 'EVENT',
+    icon: 'ale',
+    base: 0.27,
+    drift: 0.13,
+    focusCost: 4,
+    heatCost: 3,
+    blurb: 'Rain is not alpha. Knowing who priced it wrong might be.',
   },
 ]
 
@@ -713,6 +930,8 @@ export function freshSave(now: number): SaveData {
   return {
     version: SAVE_VERSION,
     name: WORLD.hero,
+    onboarded: false,
+    traderClass: null,
     stats: { edge: 40, focus: 62, heat: 18, rep: 8 },
     bankroll: START_BANKROLL,
     xp: 0,

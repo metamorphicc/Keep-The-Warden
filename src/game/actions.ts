@@ -16,6 +16,7 @@ import {
   STAT_ORDER,
   SUPPLY_BY_ID,
   TAP,
+  traderClassById,
   WORLD,
   refusal,
   sanitizeName,
@@ -50,6 +51,7 @@ import type {
   StatKey,
   Stats,
   TradeResult,
+  TraderClassId,
 } from './types'
 import { chance, formatCash, formatSigned, lerp, randFloat } from './util'
 import {
@@ -215,6 +217,23 @@ export function setScreen(screen: ScreenId): void {
   setState({ screen })
   // Telegram's native back button mirrors the in-app one
   setBackButton(screen === 'room' || screen === 'boot' ? null : () => setScreen('room'))
+}
+
+export function completeOnboarding(classId: TraderClassId): ActionResult {
+  const klass = traderClassById(classId)
+  if (!klass) return refusal('Pick a desk first.')
+
+  setState({
+    onboarded: true,
+    traderClass: klass.id,
+    stats: addStats(klass.statBoost),
+    markets: [],
+    marketsAt: 0,
+  })
+  toast('Desk picked', 'good', `${klass.short} markets will show up more often`)
+  enterHall()
+  say(`${klass.name}. First lesson: survive the first hundred tickets.`)
+  return { ok: true, message: '' }
 }
 
 export function enterHall(): void {
@@ -475,11 +494,34 @@ export function deskRead(): ActionResult {
    every scan, and are never fetched from anywhere. There is no feed.
    ========================================================================== */
 
+function rotateMarkets(list: MarketDef[], seed: number): MarketDef[] {
+  if (list.length <= 1) return list
+  const offset = Math.abs(seed) % list.length
+  return [...list.slice(offset), ...list.slice(0, offset)]
+}
+
+function boardMarketDefs(): MarketDef[] {
+  const s = getState()
+  const klass = traderClassById(s.traderClass)
+  if (!klass) return MARKETS.slice(0, 6)
+
+  const seed = s.tally.scans + Math.floor(s.marketsAt / MARKET.cooldown)
+  const preferred = rotateMarkets(
+    MARKETS.filter((def) => def.category === klass.marketBias),
+    seed,
+  )
+  const others = rotateMarkets(
+    MARKETS.filter((def) => def.category !== klass.marketBias),
+    seed * 3 + 1,
+  )
+  return [...preferred.slice(0, 4), ...others.slice(0, 2)].slice(0, 6)
+}
+
 /** The board as it stands, filling in un-scanned questions at their base. */
 export function boardQuotes(): MarketState[] {
   const s = getState()
   const seen = new Map(s.markets.map((m) => [m.id, m]))
-  return MARKETS.map(
+  return boardMarketDefs().map(
     (def) => seen.get(def.id) ?? { id: def.id, prob: def.base, quotedAt: s.marketsAt },
   )
 }
@@ -595,7 +637,9 @@ export function placeSimBet(marketId: string, side: Side, stake: number): Action
   // the coin: the quote, tilted toward his side by Edge. Edge does not buy
   // certainty, it buys a few points — which over enough tickets is the game.
   const bonus = equippedRigBonus()
-  const tilt = (s.stats.edge / 100) * (BET.edgeSwing + (bonus.edgeSwingAdd ?? 0))
+  const klass = traderClassById(s.traderClass)
+  const classTilt = klass?.marketBias === def.category ? klass.winBonus : 0
+  const tilt = (s.stats.edge / 100) * (BET.edgeSwing + (bonus.edgeSwingAdd ?? 0)) + classTilt
   const trueYes = Math.min(0.97, Math.max(0.03, quoteFor(marketId).prob + (side === 'yes' ? tilt : -tilt)))
   const trueProb = side === 'yes' ? trueYes : 1 - trueYes
   const won = Math.random() < trueProb

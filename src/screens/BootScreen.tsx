@@ -3,7 +3,7 @@ import { PixelButton } from '../components/PixelButton'
 import { PixelIcon } from '../components/PixelIcon'
 import { Ribbon } from '../components/Ribbon'
 import { enterHall } from '../game/actions'
-import { GAME_VERSION, WORLD } from '../game/config'
+import { GAME_VERSION, WORLD, traderClassById } from '../game/config'
 import { bootLine } from '../game/copy'
 import { useGame } from '../game/store'
 import { unlockAudio } from '../game/sound'
@@ -21,11 +21,13 @@ const TITLE_W = 132
 const TITLE_H = 116
 
 export function BootScreen() {
-  const { look, stats, awayMs, visits } = useGame((s) => ({
+  const { look, stats, awayMs, visits, onboarded, traderClass } = useGame((s) => ({
     look: s.look,
     stats: s.stats,
     awayMs: s.awayMs,
     visits: s.visits,
+    onboarded: s.onboarded,
+    traderClass: s.traderClass,
   }))
   const [line] = useState(() => bootLine())
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -54,6 +56,8 @@ export function BootScreen() {
     enterHall()
   }
 
+  const currentClass = traderClassById(traderClass)
+
   return (
     <div className="boot">
       <div className="boot__vignette" aria-hidden="true" />
@@ -67,7 +71,7 @@ export function BootScreen() {
         </h1>
         <div className="boot__rule">
           <span />
-          <PixelIcon name="swordBlue" size={14} />
+          <PixelIcon name="terminal" size={14} />
           <span />
         </div>
       </div>
@@ -75,31 +79,59 @@ export function BootScreen() {
       <canvas ref={canvasRef} className="boot__art" aria-hidden="true" />
 
       <div className="boot__bottom">
-        <div className="boot__intro">
-          <p>Max is 18. The bankroll is simulated. The desk is real enough.</p>
-          <ul>
-            <li>Research builds Edge.</li>
-            <li>Break restores Focus and cools Heat.</li>
-            <li>Clean wins build Rep.</li>
-          </ul>
-        </div>
+        {onboarded ? (
+          <>
+            <div className="boot__intro">
+              <p>
+                {currentClass
+                  ? `${currentClass.name}: ${currentClass.desc}`
+                  : 'Max is back at the desk. The book remembers the work.'}
+              </p>
+              <ul>
+                <li>Research builds Edge.</li>
+                <li>Break restores Focus and cools Heat.</li>
+                <li>Rep lives in Profile for future social progression.</li>
+              </ul>
+            </div>
 
-        <p className="t-body t-center boot__line">{line}</p>
+            <p className="t-body t-center boot__line">{line}</p>
 
-        <PixelButton
-          label={visits > 1 ? 'Back to the Desk' : 'Start at the Desk'}
-          icon="torch"
-          variant="gold"
-          size="lg"
-          full
-          onClick={begin}
-        />
+            <PixelButton
+              label={visits > 1 ? 'Back to the Desk' : 'Start at the Desk'}
+              icon="terminal"
+              variant="gold"
+              size="lg"
+              full
+              onClick={begin}
+            />
 
-        {visits > 1 && awayMs > 60_000 ? (
-          <div className="boot__away">
-            <Ribbon tone="dark" size="sm">{`Away ${formatAway(awayMs)}`}</Ribbon>
-          </div>
-        ) : null}
+            {visits > 1 && awayMs > 60_000 ? (
+              <div className="boot__away">
+                <Ribbon tone="dark" size="sm">{`Away ${formatAway(awayMs)}`}</Ribbon>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <div className="boot__intro boot__intro--welcome">
+              <p>Max is 18. He has a tiny simulated bankroll and one desk in a rented room.</p>
+              <ul>
+                <li>You are trading paper prediction markets.</li>
+                <li>The goal is to survive, level up, and grow the room around him.</li>
+                <li>No real money, no real orders, no wallet trade.</li>
+              </ul>
+            </div>
+
+            <PixelButton
+              label="Learn the Desk"
+              icon="terminal"
+              variant="gold"
+              size="lg"
+              full
+              onClick={begin}
+            />
+          </>
+        )}
 
         <p className="t-label boot__version">
           v{GAME_VERSION} - {WORLD.disclaimer}

@@ -134,7 +134,7 @@ export function SettingsScreen() {
         onConfirm={() => {
           resetGame()
           setConfirming(false)
-          setScreen('room')
+          setScreen('boot')
         }}
       >
         Everything goes: the tally, the {WORLD.cashName.toLowerCase()}, the rig. He will not
