@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { PixelButton } from '../components/PixelButton'
 import { PixelIcon } from '../components/PixelIcon'
 import { Ribbon } from '../components/Ribbon'
-import { enterHall } from '../game/actions'
-import { GAME_VERSION, WORLD } from '../game/config'
+import { completeOnboarding, enterHall } from '../game/actions'
+import { GAME_VERSION, TRADER_CLASSES, WORLD, traderClassById } from '../game/config'
 import { bootLine } from '../game/copy'
 import { useGame } from '../game/store'
 import { unlockAudio } from '../game/sound'
@@ -11,6 +11,7 @@ import { formatAway } from '../game/util'
 import { P } from '../styles/palette'
 import { dither, px, pxa, pxLine, type Ctx } from '../render/draw'
 import { drawWardenPortrait } from '../render/warden'
+import type { TraderClassId } from '../game/types'
 
 /* ==========================================================================
    Boot / title screen. Also the audio unlock gesture: the browser will not let
@@ -21,13 +22,17 @@ const TITLE_W = 132
 const TITLE_H = 116
 
 export function BootScreen() {
-  const { look, stats, awayMs, visits } = useGame((s) => ({
+  const { look, stats, awayMs, visits, onboarded, traderClass } = useGame((s) => ({
     look: s.look,
     stats: s.stats,
     awayMs: s.awayMs,
     visits: s.visits,
+    onboarded: s.onboarded,
+    traderClass: s.traderClass,
   }))
   const [line] = useState(() => bootLine())
+  const [step, setStep] = useState<'intro' | 'tutorial' | 'class'>('intro')
+  const [picked, setPicked] = useState<TraderClassId>('crypto')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -54,6 +59,18 @@ export function BootScreen() {
     enterHall()
   }
 
+  const next = (nextStep: 'tutorial' | 'class') => {
+    unlockAudio()
+    setStep(nextStep)
+  }
+
+  const startClass = () => {
+    unlockAudio()
+    completeOnboarding(picked)
+  }
+
+  const currentClass = traderClassById(traderClass)
+
   return (
     <div className="boot">
       <div className="boot__vignette" aria-hidden="true" />
@@ -67,7 +84,7 @@ export function BootScreen() {
         </h1>
         <div className="boot__rule">
           <span />
-          <PixelIcon name="swordBlue" size={14} />
+          <PixelIcon name="terminal" size={14} />
           <span />
         </div>
       </div>
@@ -75,31 +92,122 @@ export function BootScreen() {
       <canvas ref={canvasRef} className="boot__art" aria-hidden="true" />
 
       <div className="boot__bottom">
-        <div className="boot__intro">
-          <p>Max is 18. The bankroll is simulated. The desk is real enough.</p>
-          <ul>
-            <li>Research builds Edge.</li>
-            <li>Break restores Focus and cools Heat.</li>
-            <li>Clean wins build Rep.</li>
-          </ul>
-        </div>
+        {onboarded ? (
+          <>
+            <div className="boot__intro">
+              <p>
+                {currentClass
+                  ? `${currentClass.name}: ${currentClass.desc}`
+                  : 'Max is back at the desk. The book remembers the work.'}
+              </p>
+              <ul>
+                <li>Research builds Edge.</li>
+                <li>Break restores Focus and cools Heat.</li>
+                <li>Rep lives in Profile for future social progression.</li>
+              </ul>
+            </div>
 
-        <p className="t-body t-center boot__line">{line}</p>
+            <p className="t-body t-center boot__line">{line}</p>
 
-        <PixelButton
-          label={visits > 1 ? 'Back to the Desk' : 'Start at the Desk'}
-          icon="torch"
-          variant="gold"
-          size="lg"
-          full
-          onClick={begin}
-        />
+            <PixelButton
+              label={visits > 1 ? 'Back to the Desk' : 'Start at the Desk'}
+              icon="terminal"
+              variant="gold"
+              size="lg"
+              full
+              onClick={begin}
+            />
 
-        {visits > 1 && awayMs > 60_000 ? (
-          <div className="boot__away">
-            <Ribbon tone="dark" size="sm">{`Away ${formatAway(awayMs)}`}</Ribbon>
-          </div>
-        ) : null}
+            {visits > 1 && awayMs > 60_000 ? (
+              <div className="boot__away">
+                <Ribbon tone="dark" size="sm">{`Away ${formatAway(awayMs)}`}</Ribbon>
+              </div>
+            ) : null}
+          </>
+        ) : step === 'intro' ? (
+          <>
+            <div className="boot__intro boot__intro--welcome">
+              <p>Max is 18. He has a tiny simulated bankroll and one desk in a rented room.</p>
+              <ul>
+                <li>You are trading paper prediction markets.</li>
+                <li>The goal is to survive, level up, and grow the room around him.</li>
+                <li>No real money, no real orders, no wallet trade.</li>
+              </ul>
+            </div>
+
+            <PixelButton
+              label="Learn the Desk"
+              icon="terminal"
+              variant="gold"
+              size="lg"
+              full
+              onClick={() => next('tutorial')}
+            />
+          </>
+        ) : step === 'tutorial' ? (
+          <>
+            <div className="boot__lesson">
+              <div>
+                <b>Ticket</b>
+                <span>Take a simulated trade. Wins pay XP, losses pay less XP.</span>
+              </div>
+              <div>
+                <b>Research</b>
+                <span>Raises Edge. More Edge means better odds over many tickets.</span>
+              </div>
+              <div>
+                <b>Hedge</b>
+                <span>Reduces risk on the next fill. Useful when a ticket is live.</span>
+              </div>
+              <div>
+                <b>Break</b>
+                <span>Restores Focus and lowers Heat. High Heat makes fills worse.</span>
+              </div>
+              <div>
+                <b>Side Job</b>
+                <span>Small cash recovery when the bankroll is dead or thin.</span>
+              </div>
+            </div>
+
+            <PixelButton
+              label="Choose Class"
+              icon="dice"
+              variant="teal"
+              size="lg"
+              full
+              onClick={() => next('class')}
+            />
+          </>
+        ) : (
+          <>
+            <div className="classpick">
+              {TRADER_CLASSES.map((klass) => (
+                <button
+                  key={klass.id}
+                  type="button"
+                  className={`classpick__item ${picked === klass.id ? 'is-on' : ''}`}
+                  onClick={() => setPicked(klass.id)}
+                  aria-pressed={picked === klass.id}
+                >
+                  <PixelIcon name={klass.icon} size={20} />
+                  <span>
+                    <b>{klass.name}</b>
+                    <small>{klass.desc}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <PixelButton
+              label={`Start as ${TRADER_CLASSES.find((klass) => klass.id === picked)?.short ?? 'Trader'}`}
+              icon="check"
+              variant="gold"
+              size="lg"
+              full
+              onClick={startClass}
+            />
+          </>
+        )}
 
         <p className="t-label boot__version">
           v{GAME_VERSION} - {WORLD.disclaimer}

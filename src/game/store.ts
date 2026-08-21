@@ -43,6 +43,8 @@ function saveSlice(): SaveData {
   return {
     version: state.version,
     name: state.name,
+    onboarded: state.onboarded,
+    traderClass: state.traderClass,
     stats: state.stats,
     bankroll: state.bankroll,
     xp: state.xp,

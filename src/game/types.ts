@@ -81,6 +81,25 @@ export interface Activity {
 export type Currency = 'bankroll' | 'credits'
 
 /* ==========================================================================
+   Trader class
+   ========================================================================== */
+
+export type MarketCategory = 'crypto' | 'sports' | 'perps' | 'politics' | 'culture'
+
+export type TraderClassId = 'crypto' | 'sports' | 'perps' | 'politics' | 'general'
+
+export interface TraderClassDef {
+  id: TraderClassId
+  name: string
+  short: string
+  icon: IconName
+  marketBias: MarketCategory
+  statBoost: Partial<Stats>
+  winBonus: number
+  desc: string
+}
+
+/* ==========================================================================
    Items
    ========================================================================== */
 
@@ -157,6 +176,7 @@ export type Side = 'yes' | 'no'
 export interface MarketDef {
   id: string
   question: string
+  category: MarketCategory
   /** short chip label */
   tag: string
   icon: IconName
@@ -205,6 +225,9 @@ export interface SaveData {
   version: number
   /** what the player calls him — renameable, defaults to WORLD.hero */
   name: string
+  /** first-run guide + class choice */
+  onboarded: boolean
+  traderClass: TraderClassId | null
   stats: Stats
   /** simulated cash. Not real money. Never was. */
   bankroll: number

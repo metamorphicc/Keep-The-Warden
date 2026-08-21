@@ -8,10 +8,11 @@ import {
   SAVE_VERSION,
   STATS,
   STAT_ORDER,
+  TRADER_CLASS_BY_ID,
   freshSave,
   sanitizeName,
 } from './config'
-import type { MarketState, SaveData, Stats } from './types'
+import type { MarketState, SaveData, Stats, TraderClassId } from './types'
 import { clamp } from './util'
 import {
   cloudAvailable,
@@ -123,12 +124,20 @@ function migrate(input: Partial<SaveData>, base: SaveData): SaveData {
   }
 
   const bankroll = Math.max(0, num(input.bankroll, base.bankroll))
+  const hadProgress =
+    num(input.xp, 0) > 0 ||
+    num(input.visits, 0) > 1 ||
+    num(input.tally?.bets, 0) > 0 ||
+    num(input.tally?.scans, 0) > 0
+  const traderClass = readTraderClass(input.traderClass)
 
   return {
     version: SAVE_VERSION,
     // Saves written before v4 have no name at all. The old default name is
     // presentation debt, not a player choice, so it follows the new character.
     name: readName(input.name, base.name),
+    onboarded: typeof input.onboarded === 'boolean' ? input.onboarded : hadProgress,
+    traderClass,
     stats,
     bankroll,
     xp: Math.max(0, Math.floor(num(input.xp, base.xp))),
@@ -182,6 +191,10 @@ function readName(v: unknown, fallback: string): string {
   return name === 'Old Halvard' ? fallback : name
 }
 
+function readTraderClass(v: unknown): TraderClassId | null {
+  return typeof v === 'string' && v in TRADER_CLASS_BY_ID ? (v as TraderClassId) : null
+}
+
 function str(v: unknown, fallback: string | null): string | null {
   return typeof v === 'string' ? v : v === null ? null : fallback
 }
@@ -230,6 +243,8 @@ export function writeSave(data: SaveData, immediateCloud = false): void {
   const payload: SaveData = {
     version: SAVE_VERSION,
     name: data.name,
+    onboarded: data.onboarded,
+    traderClass: data.traderClass,
     stats: data.stats,
     bankroll: data.bankroll,
     xp: data.xp,
