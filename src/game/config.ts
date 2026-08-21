@@ -192,6 +192,20 @@ export const ACTIONS: Record<string, ActionDef> = {
       refuse: 'Too fried to work the other leg. The hedge stays theoretical.',
     },
   },
+  sidejob: {
+    id: 'sidejob',
+    label: 'Side Job',
+    icon: 'bag',
+    gain: { focus: -18, edge: -4, heat: 6 },
+    cash: 28,
+    cooldown: 120_000,
+    duration: 2200,
+    requires: {
+      stat: 'focus',
+      min: 22,
+      refuse: 'Too fried to freelance. He would bill the wrong person.',
+    },
+  },
   scan: {
     id: 'scan',
     label: 'Board',
@@ -217,7 +231,7 @@ export const ACTIONS: Record<string, ActionDef> = {
 }
 
 /** Order of the big action buttons at the desk. */
-export const ACTION_BAR: string[] = ['research', 'hedge', 'recover', 'scan', 'bet']
+export const ACTION_BAR: string[] = ['research', 'hedge', 'recover', 'sidejob', 'scan', 'bet']
 
 /**
  * The free read, offered on the research screen when the stash is empty. Slow
@@ -363,8 +377,8 @@ export const BET = {
   hedgeWindowMs: 100_000,
   hedgeWinMult: 0.7,
   hedgeLossMult: 0.55,
-  /** the desk floats him again rather than ending the game */
-  bailout: { floor: 10, grant: 25 },
+  /** below this, the game nudges him toward paid work instead of free money */
+  bailout: { floor: 10 },
 }
 
 /* ==========================================================================

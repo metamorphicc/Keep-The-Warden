@@ -375,6 +375,12 @@ export function doAction(actionId: string): ActionResult {
     burst('suds', { count: 16 })
     buzz('medium')
     toast('Hedge on', 'plain', 'Next fill is dampened both ways')
+  } else if (actionId === 'sidejob') {
+    say('He ships a tiny freelance script and pretends it was not humbling.')
+    play('coin')
+    burst('coin', { count: 7 })
+    buzz('medium')
+    toast('Side job paid', 'good', `${formatCash(cash)} earned`)
   }
 
   showGains(gain)
@@ -686,14 +692,9 @@ function resolveFill(result: TradeResult): void {
     say(`Level ${afterLevel}. ${careerStatusForLevel(afterLevel)}. He tries not to look pleased.`)
   }
 
-  // the desk floats him again rather than ending the game. It costs Rep, which
-  // is the only thing here he actually seems to mind losing.
   if (bankroll < BET.bailout.floor) {
-    setState((st) => ({
-      bankroll: Math.round((st.bankroll + BET.bailout.grant) * 100) / 100,
-    }))
-    toast('The desk floats you', 'plain', `${formatCash(BET.bailout.grant)} to keep trading`)
-    say('"Stake money. It is on the book. Try not to need it twice."')
+    toast('Bankroll empty', 'bad', 'Take a side job to earn a small stake')
+    say('No free float. If he wants another ticket, he has to do paid work first.')
   }
 }
 

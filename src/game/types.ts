@@ -60,6 +60,7 @@ export type ActivityKind =
   | 'research'
   | 'recover'
   | 'hedge'
+  | 'sidejob'
   | 'scan'
   | 'bet'
   | 'refuse'
