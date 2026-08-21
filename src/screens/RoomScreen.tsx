@@ -150,6 +150,11 @@ export function RoomScreen() {
 
         <PixelPanel variant="darkwood" pad="sm" rivets>
           <div className="room__bars">
+            <div className="room__bars-head" aria-hidden="true">
+              <span>Stat</span>
+              <span>Gauge</span>
+              <span>Value</span>
+            </div>
             {DESK_STAT_ORDER.map((key) => {
               const meta = STATS[key]
               const value = s.stats[key]
