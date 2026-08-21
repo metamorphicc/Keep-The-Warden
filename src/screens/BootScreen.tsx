@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { PixelButton } from '../components/PixelButton'
 import { PixelIcon } from '../components/PixelIcon'
 import { Ribbon } from '../components/Ribbon'
-import { completeOnboarding, enterHall } from '../game/actions'
-import { GAME_VERSION, TRADER_CLASSES, WORLD, traderClassById } from '../game/config'
+import { enterHall } from '../game/actions'
+import { GAME_VERSION, WORLD, traderClassById } from '../game/config'
 import { bootLine } from '../game/copy'
 import { useGame } from '../game/store'
 import { unlockAudio } from '../game/sound'
@@ -11,7 +11,6 @@ import { formatAway } from '../game/util'
 import { P } from '../styles/palette'
 import { dither, px, pxa, pxLine, type Ctx } from '../render/draw'
 import { drawWardenPortrait } from '../render/warden'
-import type { TraderClassId } from '../game/types'
 
 /* ==========================================================================
    Boot / title screen. Also the audio unlock gesture: the browser will not let
@@ -31,8 +30,6 @@ export function BootScreen() {
     traderClass: s.traderClass,
   }))
   const [line] = useState(() => bootLine())
-  const [step, setStep] = useState<'intro' | 'tutorial' | 'class'>('intro')
-  const [picked, setPicked] = useState<TraderClassId>('crypto')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -57,16 +54,6 @@ export function BootScreen() {
   const begin = () => {
     unlockAudio()
     enterHall()
-  }
-
-  const next = (nextStep: 'tutorial' | 'class') => {
-    unlockAudio()
-    setStep(nextStep)
-  }
-
-  const startClass = () => {
-    unlockAudio()
-    completeOnboarding(picked)
   }
 
   const currentClass = traderClassById(traderClass)
@@ -124,7 +111,7 @@ export function BootScreen() {
               </div>
             ) : null}
           </>
-        ) : step === 'intro' ? (
+        ) : (
           <>
             <div className="boot__intro boot__intro--welcome">
               <p>Max is 18. He has a tiny simulated bankroll and one desk in a rented room.</p>
@@ -141,70 +128,7 @@ export function BootScreen() {
               variant="gold"
               size="lg"
               full
-              onClick={() => next('tutorial')}
-            />
-          </>
-        ) : step === 'tutorial' ? (
-          <>
-            <div className="boot__lesson">
-              <div>
-                <b>Ticket</b>
-                <span>Take a simulated trade. Wins pay XP, losses pay less XP.</span>
-              </div>
-              <div>
-                <b>Research</b>
-                <span>Raises Edge. More Edge means better odds over many tickets.</span>
-              </div>
-              <div>
-                <b>Hedge</b>
-                <span>Reduces risk on the next fill. Useful when a ticket is live.</span>
-              </div>
-              <div>
-                <b>Break</b>
-                <span>Restores Focus and lowers Heat. High Heat makes fills worse.</span>
-              </div>
-              <div>
-                <b>Side Job</b>
-                <span>Small cash recovery when the bankroll is dead or thin.</span>
-              </div>
-            </div>
-
-            <PixelButton
-              label="Choose Class"
-              icon="dice"
-              variant="teal"
-              size="lg"
-              full
-              onClick={() => next('class')}
-            />
-          </>
-        ) : (
-          <>
-            <div className="classpick">
-              {TRADER_CLASSES.map((klass) => (
-                <button
-                  key={klass.id}
-                  type="button"
-                  className={`classpick__item ${picked === klass.id ? 'is-on' : ''}`}
-                  onClick={() => setPicked(klass.id)}
-                  aria-pressed={picked === klass.id}
-                >
-                  <PixelIcon name={klass.icon} size={20} />
-                  <span>
-                    <b>{klass.name}</b>
-                    <small>{klass.desc}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <PixelButton
-              label={`Start as ${TRADER_CLASSES.find((klass) => klass.id === picked)?.short ?? 'Trader'}`}
-              icon="check"
-              variant="gold"
-              size="lg"
-              full
-              onClick={startClass}
+              onClick={begin}
             />
           </>
         )}
