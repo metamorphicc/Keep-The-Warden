@@ -9,10 +9,10 @@ import { RoomCanvas } from '../components/RoomCanvas'
 import { SpeechBox } from '../components/SpeechBox'
 import { cooldownLeft, doAction, isAlarming, setScreen, statusLine } from '../game/actions'
 import {
-  ACTION_BAR,
   ACTIONS,
   BANKROLL_BAR,
   DESK_STAT_ORDER,
+  STAT_HIGH,
   STATS,
   WORLD,
   careerStatusForLevel,
@@ -34,6 +34,84 @@ export function RoomScreen() {
   const stashCount = Object.values(s.stash).reduce((a, b) => a + b, 0)
   const level = levelFromXp(s.xp)
   const career = careerStatusForLevel(level)
+  const broke = s.bankroll <= 0
+  const inTicket = s.activity.kind === 'bet'
+  const hedgeOn = now < s.hedgeUntil
+  const heatHigh = s.stats.heat >= STAT_HIGH
+  const focusLow = s.stats.focus < 28
+  const primaryId = broke ? 'sidejob' : 'bet'
+
+  const plainStatus = (() => {
+    if (broke) return 'Bankroll is gone. Take a side job.'
+    if (inTicket) return "You're in a ticket. Hedge or ride it."
+    if (hedgeOn) return 'Hedge is on. Next ticket is dampened.'
+    if (heatHigh) return 'Heat is high. Take a break.'
+    if (focusLow) return 'Focus is low. Take a break.'
+    return 'No open ticket.'
+  })()
+
+  const actionState = (id: string) => {
+    const def = ACTIONS[id]!
+    const left = cooldownLeft(id, now)
+    const req = def.requires
+    const value = req ? s.stats[req.stat] : 0
+    const blocked = req
+      ? (req.min !== undefined && value < req.min) ||
+        (req.max !== undefined && value > req.max)
+      : false
+    return { def, left, blocked }
+  }
+
+  const actionSub = (id: string, blocked: boolean, left: number): string | undefined => {
+    if (left > 0) return formatSeconds(left)
+    if (blocked) return 'not ready'
+    if (id === 'bet') return 'take a trade'
+    if (id === 'research') return 'improve edge'
+    if (id === 'hedge') return inTicket || hedgeOn ? 'reduce risk' : 'risk prep'
+    if (id === 'recover') return 'recover focus'
+    if (id === 'sidejob') return broke ? 'earn money' : 'extra cash'
+    if (id === 'scan') return 'scan markets'
+    return undefined
+  }
+
+  const renderAction = (
+    id: string,
+    opts: { primary?: boolean; utility?: boolean; secondary?: boolean } = {},
+  ) => {
+    const { def, left, blocked } = actionState(id)
+    const isPrimary = opts.primary
+    const visuallyMutedHedge = id === 'hedge' && !inTicket && !hedgeOn
+    return (
+      <PixelButton
+        key={id}
+        label={id === 'bet' ? 'Ticket' : def.label}
+        icon={def.icon}
+        variant={
+          isPrimary
+            ? id === 'sidejob'
+              ? 'gold'
+              : 'ember'
+            : opts.utility || opts.secondary || visuallyMutedHedge
+              ? 'ghost'
+              : 'wood'
+        }
+        size={isPrimary ? 'lg' : opts.utility || opts.secondary ? 'sm' : 'md'}
+        full={isPrimary || opts.secondary}
+        disabled={left > 0}
+        badge={id === 'research' && stashCount > 0 ? String(stashCount) : undefined}
+        sublabel={actionSub(id, blocked, left)}
+        className={[
+          isPrimary ? 'room__action-primary' : '',
+          opts.utility ? 'room__action-utility' : '',
+          opts.secondary ? 'room__action-secondary' : '',
+          visuallyMutedHedge ? 'room__action-muted' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        onClick={() => doAction(id)}
+      />
+    )
+  }
 
   return (
     <div className="screen room">
@@ -65,6 +143,11 @@ export function RoomScreen() {
       </div>
 
       <div className="room__hud">
+        <div className={`room__status ${broke ? 'is-broke' : ''}`}>
+          <span className="room__status-text">{plainStatus}</span>
+          {renderAction('scan', { utility: true })}
+        </div>
+
         <PixelPanel variant="darkwood" pad="sm" rivets>
           <div className="room__bars">
             {DESK_STAT_ORDER.map((key) => {
@@ -98,32 +181,25 @@ export function RoomScreen() {
           </div>
         </PixelPanel>
 
-        <div className="room__actions">
-          {ACTION_BAR.map((id) => {
-            const def = ACTIONS[id]!
-            const left = cooldownLeft(id, now)
-            const req = def.requires
-            const value = req ? s.stats[req.stat] : 0
-            const blocked = req
-              ? (req.min !== undefined && value < req.min) ||
-                (req.max !== undefined && value > req.max)
-              : false
-            return (
-              <PixelButton
-                key={id}
-                label={def.label}
-                icon={def.icon}
-                variant={id === 'bet' ? 'ember' : id === 'scan' ? 'teal' : 'wood'}
-                size="sm"
-                stack
-                disabled={left > 0}
-                badge={id === 'research' && stashCount > 0 ? String(stashCount) : undefined}
-                sublabel={left > 0 ? formatSeconds(left) : blocked ? 'no' : undefined}
-                onClick={() => doAction(id)}
-              />
-            )
-          })}
+        <div className={`room__trade-actions ${broke ? 'is-broke' : ''}`}>
+          {renderAction(primaryId, { primary: true })}
+          {!broke ? (
+            <div className="room__support-actions">
+              {renderAction('research')}
+              {renderAction('hedge')}
+              {renderAction('recover')}
+            </div>
+          ) : (
+            <div className="room__support-actions room__support-actions--broke">
+              {renderAction('bet')}
+              {renderAction('research')}
+              {renderAction('hedge')}
+              {renderAction('recover')}
+            </div>
+          )}
         </div>
+
+        {!broke ? <div className="room__sidejob-row">{renderAction('sidejob', { secondary: true })}</div> : null}
 
         <nav className="room__nav">
           <button type="button" className="navbtn" onClick={() => setScreen('shop')}>
