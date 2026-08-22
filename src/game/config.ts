@@ -1,5 +1,6 @@
 import type {
   ActionResult,
+  CosmeticDef,
   MarketDef,
   RigDef,
   SaveData,
@@ -29,7 +30,7 @@ export const GAME_VERSION = '2.0.0'
 export const SAVE_KEY_PREFIX = 'ktw.save.v1:'
 export const SAVE_KEY_LEGACY = 'ktw.save.v1'
 export const CLOUD_SAVE_KEY = 'ktw_save_v1'
-export const SAVE_VERSION = 9
+export const SAVE_VERSION = 10
 
 /** Longest name the player may give him. */
 export const NAME_MAX = 18
@@ -921,6 +922,79 @@ export const SLOT_LABEL: Record<'head' | 'cloak' | 'blade', string> = {
 }
 
 /* ==========================================================================
+   Donation cosmetics
+
+   Pure ownership/status. No stats, no edge swing, no bankroll, no XP.
+   ========================================================================== */
+
+export const DONATION_COSMETICS: CosmeticDef[] = [
+  {
+    id: 'cos_outfit_founder_hoodie',
+    name: 'Founder Hoodie',
+    category: 'outfit',
+    icon: 'cloak',
+    priceUsd: 2.99,
+    priceStars: 149,
+    rarity: 'standard',
+    desc: 'A clean supporter hoodie for the profile. No better fills, just better taste.',
+  },
+  {
+    id: 'cos_desk_carbon',
+    name: 'Carbon Desk',
+    category: 'desk',
+    icon: 'terminal',
+    priceUsd: 3.99,
+    priceStars: 199,
+    rarity: 'standard',
+    desc: 'Dark desktop skin with a cold blue edge strip. Same desk, sharper mood.',
+  },
+  {
+    id: 'cos_monitor_ultrawide',
+    name: 'Ultrawide Monitor',
+    category: 'monitor',
+    icon: 'dice',
+    priceUsd: 4.99,
+    priceStars: 249,
+    rarity: 'rare',
+    desc: 'One absurd extra chart surface. It looks expensive and does absolutely no math.',
+  },
+  {
+    id: 'cos_tool_founder_mug',
+    name: 'Founder Mug',
+    category: 'tool',
+    icon: 'honey',
+    priceUsd: 1.99,
+    priceStars: 99,
+    rarity: 'standard',
+    desc: 'A tiny mug on the side table. Pure desk status. Still simulated coffee.',
+  },
+  {
+    id: 'cos_room_city_loft',
+    name: 'City Loft Skin',
+    category: 'room',
+    icon: 'torch',
+    priceUsd: 6.99,
+    priceStars: 349,
+    rarity: 'rare',
+    desc: 'Warmer skyline lighting and a cleaner apartment shell. Max still has to trade.',
+  },
+  {
+    id: 'cos_room_neon_quant',
+    name: 'Neon Quant Sign',
+    category: 'room',
+    icon: 'shard',
+    priceUsd: 9.99,
+    priceStars: 499,
+    rarity: 'founder',
+    desc: 'A rare neon room mark for early supporters. Loud status, zero advantage.',
+  },
+]
+
+export const DONATION_COSMETIC_BY_ID: Record<string, CosmeticDef> = Object.fromEntries(
+  DONATION_COSMETICS.map((c) => [c.id, c]),
+)
+
+/* ==========================================================================
    Fresh save
    ========================================================================== */
 
@@ -945,6 +1019,8 @@ export function freshSave(now: number): SaveData {
     stash: { primer: 2, coffee: 1 },
     owned: RIGS.filter((r) => r.starter).map((r) => r.id),
     look: { head: 'head_none', cloak: 'cloak_rag', blade: 'blade_steel' },
+    ownedCosmetics: [],
+    activeCosmetics: {},
     markets: [],
     marketsAt: 0,
     hedgeUntil: 0,

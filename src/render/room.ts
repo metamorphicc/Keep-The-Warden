@@ -1,5 +1,6 @@
 import { P } from '../styles/palette'
 import { dither, lightPool, noise2, outline, px, pxa, pxLine, type Ctx } from './draw'
+import type { ActiveCosmetics } from '../game/types'
 
 /* ==========================================================================
    The Desk - a single low-resolution trader apartment, drawn procedurally.
@@ -86,15 +87,26 @@ function drawCeilingVoid(ctx: Ctx): void {
   }
 }
 
-function drawWall(ctx: Ctx): void {
+function drawWall(ctx: Ctx, cosmetics: ActiveCosmetics): void {
   const top = 16
   const bottom = 140
-  px(ctx, 0, top, R.w, bottom - top, '#151d26')
+  const loft = cosmetics.room === 'cos_room_city_loft' || cosmetics.room === 'cos_room_neon_quant'
+  px(ctx, 0, top, R.w, bottom - top, loft ? '#172431' : '#151d26')
 
   for (let i = 0; i * 16 < R.w; i++) {
     const x = i * 16
     const shade = noise2(i, 4)
-    const base = shade > 0.62 ? '#1b2630' : shade > 0.3 ? '#17212b' : '#121a23'
+    const base = loft
+      ? shade > 0.62
+        ? '#203040'
+        : shade > 0.3
+          ? '#1b2a38'
+          : '#142230'
+      : shade > 0.62
+        ? '#1b2630'
+        : shade > 0.3
+          ? '#17212b'
+          : '#121a23'
     px(ctx, x, top, 16, bottom - top, base)
     px(ctx, x, top, 1, bottom - top, '#0a0f15')
     px(ctx, x + 15, top, 1, bottom - top, '#0d1218')
@@ -198,8 +210,13 @@ function drawMonitorCase(ctx: Ctx, x: number, y: number, w: number, h: number): 
   px(ctx, x + Math.floor(w / 2) - 8, y + h + 7, 16, 3, P.plateDeep)
 }
 
-function drawMonitorBank(ctx: Ctx, tier: number): void {
+function drawMonitorBank(ctx: Ctx, tier: number, cosmetics: ActiveCosmetics): void {
   for (const m of MONITORS) drawMonitorCase(ctx, m.x, m.y, m.w, m.h)
+
+  if (cosmetics.monitor === 'cos_monitor_ultrawide') {
+    drawMonitorCase(ctx, 49, 45, 94, 21)
+    px(ctx, 82, 66, 26, 3, P.plateDeep)
+  }
 
   // a small laptop angled on the right side of the desk
   px(ctx, 129, 119, 28, 11, P.plateDark)
@@ -225,7 +242,21 @@ function drawMonitorBank(ctx: Ctx, tier: number): void {
   }
 }
 
-function drawProgressionUpgrades(ctx: Ctx, tier: number): void {
+function drawProgressionUpgrades(ctx: Ctx, tier: number, cosmetics: ActiveCosmetics): void {
+  if (cosmetics.room === 'cos_room_neon_quant') {
+    outline(ctx, 146, 20, 34, 10, P.ink, 1)
+    px(ctx, 147, 21, 32, 8, '#061018')
+    px(ctx, 151, 24, 4, 1, P.tealLit)
+    px(ctx, 157, 24, 5, 1, P.spiritLit)
+    px(ctx, 164, 24, 8, 1, P.goldLit)
+    pxa(ctx, 147, 21, 32, 8, P.spiritLit, 0.08)
+  } else if (cosmetics.room === 'cos_room_city_loft') {
+    outline(ctx, 145, 23, 32, 8, P.ink, 1)
+    px(ctx, 146, 24, 30, 6, '#0a1621')
+    px(ctx, 149, 26, 10, 1, P.goldLit)
+    px(ctx, 162, 26, 10, 1, P.tealLit)
+  }
+
   if (tier >= 2) {
     // goal board: the first sign he has a process, not just panic tabs
     outline(ctx, 145, 36, 32, 21, P.ink, 1)
@@ -321,13 +352,18 @@ function drawMiniChart(
   pxa(ctx, scan, y + 1, 1, h - 2, color, 0.18 + feed * 0.18)
 }
 
-function drawDesk(ctx: Ctx, tier: number): void {
+function drawDesk(ctx: Ctx, tier: number, cosmetics: ActiveCosmetics): void {
   const y = 133
-  const top = tier >= 4 ? P.plateDark : P.wood
+  const carbon = cosmetics.desk === 'cos_desk_carbon'
+  const top = carbon ? '#16222c' : tier >= 4 ? P.plateDark : P.wood
   px(ctx, 22, y, 148, 12, top)
-  px(ctx, 22, y, 148, 2, tier >= 4 ? P.plateLit : P.woodHi)
-  px(ctx, 22, y + 10, 148, 2, tier >= 4 ? P.plateDeep : P.woodDeep)
+  px(ctx, 22, y, 148, 2, carbon ? P.tealDeep : tier >= 4 ? P.plateLit : P.woodHi)
+  px(ctx, 22, y + 10, 148, 2, carbon ? '#071018' : tier >= 4 ? P.plateDeep : P.woodDeep)
   outline(ctx, 22, y, 148, 12, P.ink, 1)
+  if (carbon) {
+    px(ctx, 28, y + 4, 135, 1, P.tealLit)
+    pxa(ctx, 31, y + 7, 72, 1, P.spiritLit, 0.35)
+  }
 
   // drawers and upgradeable empty bay
   px(ctx, 27, y + 12, 36, 28, P.woodDark)
@@ -416,7 +452,7 @@ function drawChair(ctx: Ctx): void {
   px(ctx, x + 1, y + 11, 9, 4, P.plateDark)
 }
 
-function drawCoffeeStack(ctx: Ctx): void {
+function drawCoffeeStack(ctx: Ctx, cosmetics: ActiveCosmetics): void {
   const x = 148
   const y = 146
 
@@ -432,11 +468,13 @@ function drawCoffeeStack(ctx: Ctx): void {
   px(ctx, x + 11, y + 12, 12, 3, P.ink)
 
   // mug
-  px(ctx, x + 1, y + 6, 10, 11, P.goldDark)
-  px(ctx, x + 1, y + 6, 10, 2, P.goldLit)
-  px(ctx, x + 10, y + 8, 4, 5, P.goldDark)
+  const founderMug = cosmetics.tool === 'cos_tool_founder_mug'
+  px(ctx, x + 1, y + 6, 10, 11, founderMug ? P.tealDeep : P.goldDark)
+  px(ctx, x + 1, y + 6, 10, 2, founderMug ? P.spiritLit : P.goldLit)
+  px(ctx, x + 10, y + 8, 4, 5, founderMug ? P.tealDeep : P.goldDark)
   outline(ctx, x + 1, y + 6, 10, 11, P.ink, 1)
   px(ctx, x + 3, y + 8, 6, 2, '#3b2415')
+  if (founderMug) px(ctx, x + 4, y + 12, 4, 1, P.goldLit)
 
   // note stack
   px(ctx, x + 2, y + 23, 25, 5, P.boneDim)
@@ -518,7 +556,11 @@ function drawForeground(ctx: Ctx): void {
 
 const staticCache = new Map<string, HTMLCanvasElement>()
 
-function buildStatic(grime: number, tier: number): HTMLCanvasElement {
+function cosmeticKey(cosmetics: ActiveCosmetics = {}): string {
+  return `${cosmetics.room ?? ''}:${cosmetics.desk ?? ''}:${cosmetics.monitor ?? ''}:${cosmetics.tool ?? ''}`
+}
+
+function buildStatic(grime: number, tier: number, cosmetics: ActiveCosmetics): HTMLCanvasElement {
   const cv = document.createElement('canvas')
   cv.width = SCENE.w
   cv.height = SCENE.h
@@ -529,18 +571,18 @@ function buildStatic(grime: number, tier: number): HTMLCanvasElement {
 
   ctx.save()
   ctx.translate(0, VOID_H)
-  drawWall(ctx)
+  drawWall(ctx, cosmetics)
   drawCityWindow(ctx)
-  drawProgressionUpgrades(ctx, tier)
+  drawProgressionUpgrades(ctx, tier, cosmetics)
   drawSideLight(ctx, 17, 66)
   drawSideLight(ctx, 161, 66, true)
   drawNotesBoard(ctx, tier)
-  drawMonitorBank(ctx, tier)
+  drawMonitorBank(ctx, tier, cosmetics)
   drawSkirting(ctx)
-  drawDesk(ctx, tier)
+  drawDesk(ctx, tier, cosmetics)
   drawFloor(ctx)
   drawChair(ctx)
-  drawCoffeeStack(ctx)
+  drawCoffeeStack(ctx, cosmetics)
   drawGrime(ctx, grime)
   ctx.restore()
 
@@ -549,11 +591,11 @@ function buildStatic(grime: number, tier: number): HTMLCanvasElement {
   return cv
 }
 
-function getStatic(grime: number, tier: number): HTMLCanvasElement {
-  const key = `${grime}:${tier}`
+function getStatic(grime: number, tier: number, cosmetics: ActiveCosmetics = {}): HTMLCanvasElement {
+  const key = `${grime}:${tier}:${cosmeticKey(cosmetics)}`
   let cv = staticCache.get(key)
   if (!cv) {
-    cv = buildStatic(grime, tier)
+    cv = buildStatic(grime, tier, cosmetics)
     staticCache.set(key, cv)
   }
   return cv
@@ -569,13 +611,15 @@ export interface RoomOpts {
   dim: number
   edge: number
   tier: number
+  cosmetics?: ActiveCosmetics
   heroShift?: number
   heroShadow?: number
 }
 
 export function drawRoom(ctx: Ctx, o: RoomOpts): void {
   ctx.imageSmoothingEnabled = false
-  ctx.drawImage(getStatic(o.grime, o.tier), 0, 0)
+  const cosmetics = o.cosmetics ?? {}
+  ctx.drawImage(getStatic(o.grime, o.tier, cosmetics), 0, 0)
 
   const flick = 0.86 + Math.sin(o.t / 180) * 0.08 + Math.sin(o.t / 67) * 0.05
   const lightStrength = (1 - o.dim * 0.72) * flick
@@ -607,6 +651,21 @@ export function drawRoom(ctx: Ctx, o: RoomOpts): void {
     lightPool(ctx, m.x + m.w / 2, m.y + m.h / 2, 22 + mi * 2, m.hue, 0.06 * feed * lightStrength)
   })
 
+  if (cosmetics.monitor === 'cos_monitor_ultrawide') {
+    drawMiniChart(
+      ctx,
+      55,
+      51,
+      82,
+      10,
+      [0.42, 0.46, 0.39, 0.55, 0.61, 0.58, 0.72, 0.7, 0.82, 0.76],
+      P.goldLit,
+      o.t,
+      feed,
+    )
+    lightPool(ctx, 96, 55, 38, P.goldLit, 0.045 * feed * lightStrength)
+  }
+
   // laptop pulse
   pxa(ctx, 133, 122, 17 + (Math.floor(o.t / 420) % 5), 1, P.greenLit, 0.62 * feed)
   pxa(ctx, 133, 125, 10, 1, P.tealLit, 0.42 * feed)
@@ -619,6 +678,13 @@ export function drawRoom(ctx: Ctx, o: RoomOpts): void {
       pxa(ctx, x, y, 4, 1, i % 3 === 0 ? P.goldLit : P.spiritLit, 0.16 + o.edge * 0.3)
     }
     lightPool(ctx, 96, 108, 34 + o.edge * 12, P.spirit, 0.08 * o.edge)
+  }
+
+  if (cosmetics.room === 'cos_room_city_loft') {
+    lightPool(ctx, 96, 92, 58, P.goldLit, 0.045 * lightStrength)
+  }
+  if (cosmetics.room === 'cos_room_neon_quant') {
+    lightPool(ctx, 163, 25, 30, P.spiritLit, 0.08 * lightStrength)
   }
 
   // coffee steam

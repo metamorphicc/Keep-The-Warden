@@ -31,6 +31,8 @@ interface TelegramWebApp {
   setHeaderColor?: (color: string) => void
   setBackgroundColor?: (color: string) => void
   setBottomBarColor?: (color: string) => void
+  openInvoice?: (url: string, cb?: (status: string) => void) => void
+  openLink?: (url: string, options?: { try_instant_view?: boolean }) => void
   enableClosingConfirmation?: () => void
   disableVerticalSwipes?: () => void
   onEvent: (event: string, cb: (...args: unknown[]) => void) => void
@@ -66,6 +68,10 @@ function wa(): TelegramWebApp | undefined {
 }
 
 export const isTelegram = (): boolean => Boolean(wa()?.initData !== undefined && wa()?.platform !== undefined)
+
+export function tgInitData(): string | null {
+  return wa()?.initData ?? null
+}
 
 export function tgUserName(): string | null {
   return wa()?.initDataUnsafe?.user?.first_name ?? null
@@ -233,6 +239,44 @@ export function telegramInfo(): { platform: string; version: string } | null {
   const app = wa()
   if (!app) return null
   return { platform: app.platform, version: app.version }
+}
+
+export function openTelegramInvoice(url: string): Promise<string> {
+  const app = wa()
+  if (!app?.openInvoice || !versionAtLeast('6.1')) {
+    return Promise.reject(new Error('Telegram invoice is not available in this client.'))
+  }
+  return new Promise((resolve, reject) => {
+    let settled = false
+    const done = (status: string) => {
+      if (settled) return
+      settled = true
+      resolve(status)
+    }
+    const timer = window.setTimeout(() => {
+      if (settled) return
+      settled = true
+      reject(new Error('Telegram invoice timed out.'))
+    }, 120_000)
+    try {
+      app.openInvoice?.(url, (status) => {
+        window.clearTimeout(timer)
+        done(status)
+      })
+    } catch (error) {
+      window.clearTimeout(timer)
+      reject(error instanceof Error ? error : new Error('Could not open Telegram invoice.'))
+    }
+  })
+}
+
+export function openTelegramExternalLink(url: string): void {
+  const app = wa()
+  if (app?.openLink) {
+    app.openLink(url)
+    return
+  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 
 /* --------------------------------------------------------------------------

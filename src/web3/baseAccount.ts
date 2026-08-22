@@ -8,6 +8,8 @@ interface EthereumProvider {
   isCoinbaseWallet?: boolean
 }
 
+const BASE_CHAIN_ID = '0x2105'
+
 declare global {
   interface Window {
     ethereum?: EthereumProvider
@@ -49,4 +51,34 @@ export async function connectBaseAccount(): Promise<BaseAccountConnection> {
   }
 
   return { address: accounts[0], chainId }
+}
+
+export async function ensureBaseChain(): Promise<void> {
+  const eth = baseProvider()
+  if (!eth) throw new Error('No wallet found. Open in Base App or connect Base Account first.')
+
+  const current = await eth.request({ method: 'eth_chainId' })
+  if (current === BASE_CHAIN_ID) return
+
+  try {
+    await eth.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: BASE_CHAIN_ID }],
+    })
+  } catch (error) {
+    const code = typeof error === 'object' && error && 'code' in error ? (error as { code?: unknown }).code : null
+    if (code !== 4902) throw error
+    await eth.request({
+      method: 'wallet_addEthereumChain',
+      params: [
+        {
+          chainId: BASE_CHAIN_ID,
+          chainName: 'Base',
+          nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+          rpcUrls: ['https://mainnet.base.org'],
+          blockExplorerUrls: ['https://basescan.org'],
+        },
+      ],
+    })
+  }
 }

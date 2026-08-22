@@ -58,6 +58,8 @@ function saveSlice(): SaveData {
     stash: state.stash,
     owned: state.owned,
     look: state.look,
+    ownedCosmetics: state.ownedCosmetics,
+    activeCosmetics: state.activeCosmetics,
     markets: state.markets,
     marketsAt: state.marketsAt,
     hedgeUntil: state.hedgeUntil,

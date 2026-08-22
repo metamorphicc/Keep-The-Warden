@@ -1,5 +1,6 @@
 import {
   CLOUD_SAVE_KEY,
+  DONATION_COSMETIC_BY_ID,
   MARKET_BY_ID,
   MAX_OFFLINE_HOURS,
   OFFLINE_FLOOR,
@@ -15,6 +16,8 @@ import {
 import type {
   AchievementId,
   AchievementRecord,
+  ActiveCosmetics,
+  CosmeticCategory,
   LoginMethod,
   MarketState,
   SaveData,
@@ -166,6 +169,8 @@ function migrate(input: Partial<SaveData>, base: SaveData): SaveData {
       cloak: str(input.look?.cloak, base.look.cloak),
       blade: str(input.look?.blade, base.look.blade),
     },
+    ownedCosmetics: readOwnedCosmetics(input.ownedCosmetics),
+    activeCosmetics: readActiveCosmetics(input.activeCosmetics),
     markets: readMarkets(input.markets),
     marketsAt: num(input.marketsAt, base.marketsAt),
     hedgeUntil: num(input.hedgeUntil, base.hedgeUntil),
@@ -235,6 +240,29 @@ function readWalletAddress(v: unknown): string | null {
   return typeof v === 'string' && /^0x[a-fA-F0-9]{40}$/.test(v) ? v : null
 }
 
+function readOwnedCosmetics(input: unknown): string[] {
+  if (!Array.isArray(input)) return []
+  return Array.from(
+    new Set(input.filter((id): id is string => typeof id === 'string' && id in DONATION_COSMETIC_BY_ID)),
+  )
+}
+
+function readActiveCosmetics(input: unknown): ActiveCosmetics {
+  if (!input || typeof input !== 'object') return {}
+  const out: ActiveCosmetics = {}
+  for (const [category, id] of Object.entries(input)) {
+    if (!isCosmeticCategory(category)) continue
+    if (typeof id !== 'string' || !(id in DONATION_COSMETIC_BY_ID)) continue
+    if (DONATION_COSMETIC_BY_ID[id].category !== category) continue
+    out[category] = id
+  }
+  return out
+}
+
+function isCosmeticCategory(v: string): v is CosmeticCategory {
+  return v === 'outfit' || v === 'desk' || v === 'monitor' || v === 'room' || v === 'tool'
+}
+
 function str(v: unknown, fallback: string | null): string | null {
   return typeof v === 'string' ? v : v === null ? null : fallback
 }
@@ -298,6 +326,8 @@ export function writeSave(data: SaveData, immediateCloud = false): void {
     stash: data.stash,
     owned: data.owned,
     look: data.look,
+    ownedCosmetics: data.ownedCosmetics,
+    activeCosmetics: data.activeCosmetics,
     markets: data.markets,
     marketsAt: data.marketsAt,
     hedgeUntil: data.hedgeUntil,

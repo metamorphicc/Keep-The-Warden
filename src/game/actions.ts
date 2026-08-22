@@ -3,6 +3,7 @@ import {
   BET,
   XP,
   DESK_READ,
+  DONATION_COSMETIC_BY_ID,
   EDGE_SOFT_CAP,
   careerStatusForLevel,
   levelFromXp,
@@ -43,7 +44,9 @@ import type {
   ActionResult,
   ActivityKind,
   AchievementId,
+  CosmeticCategory,
   Currency,
+  DonationPaymentProvider,
   EquipSlot,
   LoginMethod,
   MarketState,
@@ -57,6 +60,7 @@ import type {
   TraderClassId,
 } from './types'
 import { chance, formatCash, formatSigned, lerp, randFloat } from './util'
+import { payForCosmetic, providerLabel } from '../payments/cosmeticCheckout'
 import { claimBaseAchievementBadge } from '../web3/baseAchievements'
 import {
   haptic,
@@ -852,6 +856,71 @@ export function unequipSlot(slot: EquipSlot): ActionResult {
   setState((s) => ({ look: { ...s.look, [slot]: null } }))
   play('back')
   return { ok: true, message: '' }
+}
+
+/* ==========================================================================
+   Donation cosmetics - pure presentation
+   ========================================================================== */
+
+export function equipCosmetic(id: string): ActionResult {
+  const cosmetic = DONATION_COSMETIC_BY_ID[id]
+  if (!cosmetic) return refusal('Cosmetic not found.')
+  if (!getState().ownedCosmetics.includes(id)) return refusal('Locked. Buy it first.')
+
+  setState((s) => ({
+    activeCosmetics: { ...s.activeCosmetics, [cosmetic.category]: id },
+  }))
+  play('click')
+  buzz('light')
+  toast('Cosmetic equipped', 'good', cosmetic.name)
+  return { ok: true, message: `${cosmetic.name} equipped.` }
+}
+
+export function clearCosmetic(category: CosmeticCategory): ActionResult {
+  setState((s) => ({ activeCosmetics: { ...s.activeCosmetics, [category]: null } }))
+  play('back')
+  return { ok: true, message: 'Back to the default look.' }
+}
+
+export async function buyCosmetic(
+  id: string,
+  provider: DonationPaymentProvider,
+): Promise<ActionResult> {
+  const cosmetic = DONATION_COSMETIC_BY_ID[id]
+  if (!cosmetic) return refusal('Cosmetic not found.')
+
+  const s = getState()
+  if (s.ownedCosmetics.includes(id)) return equipCosmetic(id)
+
+  if (provider === 'base' && (s.loginMethod !== 'base' || !s.walletAddress)) {
+    const msg = 'Enter with Base Account to buy through Base.'
+    toast('Base needed', 'bad', msg)
+    return refusal(msg)
+  }
+  if ((provider === 'telegram-stars' || provider === 'ton') && s.loginMethod !== 'telegram') {
+    const msg = 'Enter with Telegram to buy with Stars or TON.'
+    toast('Telegram needed', 'bad', msg)
+    return refusal(msg)
+  }
+
+  try {
+    const receipt = await payForCosmetic(cosmetic, s, provider)
+    setState((state) => ({
+      ownedCosmetics: [...new Set([...state.ownedCosmetics, id])],
+      activeCosmetics: { ...state.activeCosmetics, [cosmetic.category]: id },
+    }))
+    play('fanfare')
+    notify('success')
+    toast('Cosmetic unlocked', 'good', `${cosmetic.name} - ${providerLabel(receipt.provider)}`)
+    say(`${cosmetic.name}. Pure style. The market remains unimpressed.`)
+    return { ok: true, message: receipt.id }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Checkout failed.'
+    play('deny')
+    notify('error')
+    toast('Checkout not complete', 'bad', msg)
+    return refusal(msg)
+  }
 }
 
 /* ==========================================================================

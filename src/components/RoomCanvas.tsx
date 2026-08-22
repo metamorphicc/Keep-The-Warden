@@ -95,6 +95,7 @@ export function RoomCanvas() {
         dim,
         edge,
         tier,
+        cosmetics: s.activeCosmetics,
         // his shadow walks to the mat with him and thins as he folds up
         heroShift: pose.shift,
         heroShadow: 1 - pose.sit * 0.72,

@@ -144,6 +144,27 @@ export interface AchievementRecord {
 }
 
 /* ==========================================================================
+   Cosmetic ownership / donations
+   ========================================================================== */
+
+export type CosmeticCategory = 'outfit' | 'desk' | 'monitor' | 'room' | 'tool'
+
+export type DonationPaymentProvider = 'base' | 'telegram-stars' | 'ton'
+
+export interface CosmeticDef {
+  id: string
+  name: string
+  category: CosmeticCategory
+  icon: IconName
+  priceUsd: number
+  priceStars: number
+  rarity: 'standard' | 'rare' | 'founder'
+  desc: string
+}
+
+export type ActiveCosmetics = Partial<Record<CosmeticCategory, string | null>>
+
+/* ==========================================================================
    Items
    ========================================================================== */
 
@@ -292,6 +313,9 @@ export interface SaveData {
   /** rigIds the player owns */
   owned: string[]
   look: EquippedLook
+  /** paid cosmetic ids; pure presentation, never gameplay power */
+  ownedCosmetics: string[]
+  activeCosmetics: ActiveCosmetics
   /** the board as last scanned */
   markets: MarketState[]
   /** epoch ms of the last scan */
