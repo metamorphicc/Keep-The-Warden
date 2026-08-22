@@ -71,6 +71,10 @@ export function BootScreen() {
     enterHall()
   }
 
+  useEffect(() => {
+    if (!onboarded && loginMethod !== null) enterHall()
+  }, [loginMethod, onboarded])
+
   const currentClass = traderClassById(traderClass)
   const telegramLabel = isTelegram() ? 'Continue with Telegram' : 'Continue as Guest'
   const telegramName = (() => {
@@ -81,7 +85,6 @@ export function BootScreen() {
     if (handle) return `@${handle}`
     return isTelegram() ? 'Telegram account' : 'Local browser'
   })()
-  const identityReady = loginMethod !== null
   const identityLine =
     loginMethod === 'base'
       ? `Base Account ${shortAddress(walletAddress)}`
@@ -98,9 +101,9 @@ export function BootScreen() {
     try {
       const wallet = await connectBaseAccount()
       setLoginIdentity('base', wallet)
+      setConnecting(false)
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Could not connect wallet.')
-    } finally {
       setConnecting(false)
     }
   }
@@ -131,7 +134,7 @@ export function BootScreen() {
 
       <canvas ref={canvasRef} className="boot__art" aria-hidden="true" />
 
-      <div className="boot__bottom">
+      <div className={`boot__bottom ${onboarded ? 'boot__bottom--resume' : 'boot__bottom--auth'}`}>
         {onboarded ? (
           <>
             <div className="boot__intro">
@@ -171,7 +174,7 @@ export function BootScreen() {
               <ul>
                 <li>You are trading paper prediction markets.</li>
                 <li>The goal is to survive, level up, and grow the room around him.</li>
-                <li>No real money, no real orders, no wallet trade.</li>
+                <li>Wallet identity only. No real money, no real orders.</li>
               </ul>
             </div>
 
@@ -205,16 +208,6 @@ export function BootScreen() {
               {authError ? <p className="boot__auth-error">{authError}</p> : null}
             </div>
 
-            <PixelButton
-              label="Learn the Desk"
-              icon="terminal"
-              variant="gold"
-              size="lg"
-              full
-              disabled={!identityReady}
-              sublabel={identityReady ? 'start onboarding' : 'choose sign in first'}
-              onClick={begin}
-            />
           </>
         )}
 

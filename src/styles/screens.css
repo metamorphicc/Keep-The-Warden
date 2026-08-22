@@ -168,9 +168,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 18px 16px calc(14px + var(--sa-bottom));
+  justify-content: flex-start;
+  gap: 18px;
+  padding: calc(22px + var(--sa-top)) 16px calc(28px + var(--sa-bottom));
   background-color: #070a0f;
   background-image:
     repeating-linear-gradient(180deg, rgba(104, 201, 255, 0.035) 0 2px, rgba(0, 0, 0, 0) 2px 4px),
@@ -192,13 +192,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   flex: 0 0 auto;
 }
 
 .boot__eyebrow {
-  font-size: 8px;
-  letter-spacing: 0.22em;
+  font-size: 7px;
+  letter-spacing: 0.2em;
   color: var(--spirit-pale);
 }
 
@@ -206,9 +206,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   font-family: var(--font-title);
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1.25;
   font-weight: 400;
   text-transform: uppercase;
@@ -221,16 +221,16 @@
 }
 
 .boot__title-small {
-  font-size: 10px;
+  font-size: 8px;
   color: var(--bone-dim);
-  letter-spacing: 0.3em;
+  letter-spacing: 0.26em;
 }
 
 .boot__rule {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 190px;
+  width: 150px;
 }
 
 .boot__rule span {
@@ -243,7 +243,8 @@
 .boot__art {
   position: relative;
   flex: 0 1 auto;
-  width: 264px;
+  margin-top: 6px;
+  width: min(226px, 58vh);
   max-width: 100%;
   height: auto;
   border: var(--bd) solid var(--ink);
@@ -258,8 +259,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex: 0 0 auto;
+}
+
+.boot__bottom--auth {
+  margin-top: clamp(28px, 12vh, 118px);
+}
+
+.boot__bottom--resume {
+  margin-top: auto;
 }
 
 .boot__line {
@@ -271,7 +280,7 @@
 
 .boot__intro {
   width: 100%;
-  padding: 8px 9px;
+  padding: 7px 9px;
   background: rgba(5, 8, 13, 0.72);
   border: 2px solid var(--ink);
   box-shadow:
@@ -282,7 +291,7 @@
 }
 
 .boot__intro p {
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.45;
   color: var(--bone);
 }
@@ -295,7 +304,7 @@
 }
 
 .boot__intro li {
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1.35;
 }
 
@@ -345,14 +354,20 @@
 }
 
 .boot__auth-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 5px;
 }
 
 .boot__auth-actions .btn {
-  min-height: 44px;
-  padding: 6px 5px;
+  min-height: 56px;
+  padding: 8px 10px;
+  justify-content: flex-start;
+}
+
+.boot__auth-actions .btn__text {
+  align-items: flex-start;
+  text-align: left;
 }
 
 .boot__auth-actions .btn__label {
