@@ -160,6 +160,16 @@ export default async function handler(req: Req, res: Res): Promise<void> {
   }
 
   const update = parseBody(req.body)
+  const preCheckoutId: unknown = update?.pre_checkout_query?.id
+  if (typeof preCheckoutId === 'string') {
+    await callBot('answerPreCheckoutQuery', {
+      pre_checkout_query_id: preCheckoutId,
+      ok: true,
+    })
+    res.status(200).end()
+    return
+  }
+
   const message = update?.message ?? update?.edited_message
   const chatId: unknown = message?.chat?.id
   const text: string = typeof message?.text === 'string' ? message.text : ''

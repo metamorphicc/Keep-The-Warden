@@ -44,7 +44,9 @@ export function providerLabel(provider: DonationPaymentProvider): string {
 
 export function providersForLogin(method: LoginMethod | null): DonationPaymentProvider[] {
   if (method === 'base') return ['base']
-  if (method === 'telegram') return ['telegram-stars', 'ton']
+  if (method === 'telegram') {
+    return env().VITE_QP_TON_CHECKOUT_URL ? ['telegram-stars', 'ton'] : ['telegram-stars']
+  }
   return []
 }
 
@@ -72,8 +74,7 @@ async function postJson<T>(url: string, cosmetic: CosmeticDef, state: GameState)
 
 async function payWithBase(cosmetic: CosmeticDef, state: GameState): Promise<CosmeticReceipt> {
   if (!state.walletAddress) throw new Error('Connect Base Account before buying cosmetics.')
-  const endpoint = env().VITE_QP_BASE_COSMETIC_CHECKOUT_URL
-  if (!endpoint) throw new Error('Base cosmetic checkout endpoint is not configured.')
+  const endpoint = env().VITE_QP_BASE_COSMETIC_CHECKOUT_URL ?? '/api/checkout/base-cosmetic'
 
   await ensureBaseChain()
   const eth = baseProvider()
@@ -101,8 +102,8 @@ async function payWithBase(cosmetic: CosmeticDef, state: GameState): Promise<Cos
 }
 
 async function payWithStars(cosmetic: CosmeticDef, state: GameState): Promise<CosmeticReceipt> {
-  const endpoint = env().VITE_QP_TELEGRAM_STARS_CHECKOUT_URL
-  if (!endpoint) throw new Error('Telegram Stars checkout endpoint is not configured.')
+  const endpoint =
+    env().VITE_QP_TELEGRAM_STARS_CHECKOUT_URL ?? '/api/checkout/telegram-stars'
 
   const payload = await postJson<InvoicePayload>(endpoint, cosmetic, state)
   const invoiceUrl = payload.invoiceUrl ?? payload.url
