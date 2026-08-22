@@ -43,6 +43,10 @@ function saveSlice(): SaveData {
   return {
     version: state.version,
     name: state.name,
+    loginMethod: state.loginMethod,
+    walletAddress: state.walletAddress,
+    walletChainId: state.walletChainId,
+    walletConnectedAt: state.walletConnectedAt,
     onboarded: state.onboarded,
     traderClass: state.traderClass,
     stats: state.stats,

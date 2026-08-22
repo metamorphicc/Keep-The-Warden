@@ -120,7 +120,7 @@ export function SettingsScreen() {
         <p className="t-label t-dim t-center screen__foot">
           {WORLD.disclaimer}
           <br />
-          No wallet, no chain, no deposits. It is a toy book on a wooden desk.
+          Wallet identity only. No deposits, no real orders. It is a toy book on a desk.
         </p>
       </div>
 

@@ -12,7 +12,7 @@ import {
   freshSave,
   sanitizeName,
 } from './config'
-import type { MarketState, SaveData, Stats, TraderClassId } from './types'
+import type { LoginMethod, MarketState, SaveData, Stats, TraderClassId } from './types'
 import { clamp } from './util'
 import {
   cloudAvailable,
@@ -136,6 +136,10 @@ function migrate(input: Partial<SaveData>, base: SaveData): SaveData {
     // Saves written before v4 have no name at all. The old default name is
     // presentation debt, not a player choice, so it follows the new character.
     name: readName(input.name, base.name),
+    loginMethod: readLoginMethod(input.loginMethod),
+    walletAddress: readWalletAddress(input.walletAddress),
+    walletChainId: typeof input.walletChainId === 'string' ? input.walletChainId : null,
+    walletConnectedAt: Math.max(0, num(input.walletConnectedAt, 0)),
     onboarded: typeof input.onboarded === 'boolean' ? input.onboarded : hadProgress,
     traderClass,
     stats,
@@ -195,6 +199,14 @@ function readTraderClass(v: unknown): TraderClassId | null {
   return typeof v === 'string' && v in TRADER_CLASS_BY_ID ? (v as TraderClassId) : null
 }
 
+function readLoginMethod(v: unknown): LoginMethod | null {
+  return v === 'base' || v === 'telegram' || v === 'guest' ? v : null
+}
+
+function readWalletAddress(v: unknown): string | null {
+  return typeof v === 'string' && /^0x[a-fA-F0-9]{40}$/.test(v) ? v : null
+}
+
 function str(v: unknown, fallback: string | null): string | null {
   return typeof v === 'string' ? v : v === null ? null : fallback
 }
@@ -243,6 +255,10 @@ export function writeSave(data: SaveData, immediateCloud = false): void {
   const payload: SaveData = {
     version: SAVE_VERSION,
     name: data.name,
+    loginMethod: data.loginMethod,
+    walletAddress: data.walletAddress,
+    walletChainId: data.walletChainId,
+    walletConnectedAt: data.walletConnectedAt,
     onboarded: data.onboarded,
     traderClass: data.traderClass,
     stats: data.stats,

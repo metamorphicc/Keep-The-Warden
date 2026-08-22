@@ -43,6 +43,7 @@ import type {
   ActivityKind,
   Currency,
   EquipSlot,
+  LoginMethod,
   MarketState,
   MarketDef,
   ScreenId,
@@ -842,6 +843,20 @@ export function renameWarden(input: string): string {
       : `He tries it out under his breath. "${name}." It will do.`,
   )
   return name
+}
+
+export function setLoginIdentity(
+  method: LoginMethod,
+  wallet?: { address: string; chainId: string | null },
+): void {
+  setState({
+    loginMethod: method,
+    walletAddress: wallet?.address ?? null,
+    walletChainId: wallet?.chainId ?? null,
+    walletConnectedAt: wallet ? Date.now() : 0,
+  })
+  play('click')
+  buzz('light')
 }
 
 /* ==========================================================================

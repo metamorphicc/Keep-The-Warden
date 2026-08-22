@@ -24,6 +24,7 @@ import { bankrollHealth, overallForm, useGameState } from '../game/store'
 import type { EquipSlot } from '../game/types'
 import { formatAway, formatCash, formatSigned } from '../game/util'
 import { cloudAvailable, tgUserId, tgUserName, tgUsername } from '../telegram/telegram'
+import { shortAddress } from '../web3/baseAccount'
 
 /* ==========================================================================
    Trading record: who he is, how he is reading it, and the whole book.
@@ -51,7 +52,7 @@ export function ProfileScreen() {
   // plain browser (or a client that hides the user), whatever the SDK claims.
   const linked = tgUserId() !== null
 
-  const keeper = (() => {
+  const telegramKeeper = (() => {
     const first = tgUserName()
     const handle = tgUsername()
     if (first && handle) return `${first} (@${handle})`
@@ -60,11 +61,22 @@ export function ProfileScreen() {
     return linked ? 'Unnamed account' : 'Local guest'
   })()
 
-  const syncNote = synced
-    ? 'Held against your Telegram account, so the book turns up on any device you sign into.'
-    : linked
-      ? 'This Telegram client is too old for account storage. The book lives on this device only.'
-      : 'Browser session. The book lives in this browser only - open the app inside Telegram to carry it around.'
+  const loginMethod = s.loginMethod ?? (linked ? 'telegram' : 'guest')
+  const keeper =
+    loginMethod === 'base'
+      ? shortAddress(s.walletAddress)
+      : loginMethod === 'telegram'
+        ? telegramKeeper
+        : 'Local guest'
+
+  const syncNote =
+    loginMethod === 'base'
+      ? 'Base Account is identity only for now. The book still lives in this browser until wallet saves are added.'
+      : synced
+        ? 'Held against your Telegram account, so the book turns up on any device you sign into.'
+        : linked
+          ? 'This Telegram client is too old for account storage. The book lives on this device only.'
+          : 'Browser session. The book lives in this browser only - connect in Telegram or Base later to carry it around.'
 
   function openRename(): void {
     setDraft(s.name)
@@ -199,11 +211,16 @@ export function ProfileScreen() {
 
         <PixelPanel variant="darkwood" title="Account" titleIcon="warden" pad="md" rivets>
           <ul className="detail__gains detail__gains--text">
-            <Row label="Signed in" value={keeper} icon="warden" />
+            <Row
+              label="Signed in"
+              value={loginMethod === 'base' ? 'Base Account' : loginMethod === 'telegram' ? 'Telegram' : 'Guest'}
+              icon={loginMethod === 'base' ? 'coin' : 'warden'}
+            />
+            <Row label="Identity" value={keeper} icon={loginMethod === 'base' ? 'coin' : 'terminal'} />
             <Row
               label="Save"
-              value={synced ? 'Telegram account' : 'This device'}
-              icon={synced ? 'check' : 'lock'}
+              value={loginMethod === 'base' ? 'This browser' : synced ? 'Telegram account' : 'This device'}
+              icon={loginMethod === 'base' ? 'lock' : synced ? 'check' : 'lock'}
             />
             <Row
               label="Last seen"

@@ -81,6 +81,12 @@ export interface Activity {
 export type Currency = 'bankroll' | 'credits'
 
 /* ==========================================================================
+   Login / identity
+   ========================================================================== */
+
+export type LoginMethod = 'base' | 'telegram' | 'guest'
+
+/* ==========================================================================
    Trader class
    ========================================================================== */
 
@@ -225,6 +231,11 @@ export interface SaveData {
   version: number
   /** what the player calls him — renameable, defaults to WORLD.hero */
   name: string
+  /** how the player chose to enter this local book */
+  loginMethod: LoginMethod | null
+  walletAddress: string | null
+  walletChainId: string | null
+  walletConnectedAt: number
   /** first-run guide + class choice */
   onboarded: boolean
   traderClass: TraderClassId | null

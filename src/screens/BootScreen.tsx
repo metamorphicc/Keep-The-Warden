@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { PixelButton } from '../components/PixelButton'
 import { PixelIcon } from '../components/PixelIcon'
 import { Ribbon } from '../components/Ribbon'
-import { enterHall } from '../game/actions'
+import { enterHall, setLoginIdentity } from '../game/actions'
 import { GAME_VERSION, WORLD, traderClassById } from '../game/config'
 import { bootLine } from '../game/copy'
 import { useGame } from '../game/store'
 import { unlockAudio } from '../game/sound'
 import { formatAway } from '../game/util'
+import { isTelegram, tgUserName, tgUsername } from '../telegram/telegram'
+import { baseAccountAvailable, connectBaseAccount, shortAddress } from '../web3/baseAccount'
 import { P } from '../styles/palette'
 import { dither, px, pxa, pxLine, type Ctx } from '../render/draw'
 import { drawWardenPortrait } from '../render/warden'
@@ -21,15 +23,28 @@ const TITLE_W = 132
 const TITLE_H = 116
 
 export function BootScreen() {
-  const { look, stats, awayMs, visits, onboarded, traderClass } = useGame((s) => ({
+  const {
+    look,
+    stats,
+    awayMs,
+    visits,
+    onboarded,
+    traderClass,
+    loginMethod,
+    walletAddress,
+  } = useGame((s) => ({
     look: s.look,
     stats: s.stats,
     awayMs: s.awayMs,
     visits: s.visits,
     onboarded: s.onboarded,
     traderClass: s.traderClass,
+    loginMethod: s.loginMethod,
+    walletAddress: s.walletAddress,
   }))
   const [line] = useState(() => bootLine())
+  const [connecting, setConnecting] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -57,6 +72,44 @@ export function BootScreen() {
   }
 
   const currentClass = traderClassById(traderClass)
+  const telegramLabel = isTelegram() ? 'Continue with Telegram' : 'Continue as Guest'
+  const telegramName = (() => {
+    const first = tgUserName()
+    const handle = tgUsername()
+    if (first && handle) return `${first} (@${handle})`
+    if (first) return first
+    if (handle) return `@${handle}`
+    return isTelegram() ? 'Telegram account' : 'Local browser'
+  })()
+  const identityReady = loginMethod !== null
+  const identityLine =
+    loginMethod === 'base'
+      ? `Base Account ${shortAddress(walletAddress)}`
+      : loginMethod === 'telegram'
+        ? `Telegram ${telegramName}`
+        : loginMethod === 'guest'
+          ? 'Guest browser session'
+          : 'Choose how to enter.'
+
+  const chooseBase = async () => {
+    unlockAudio()
+    setAuthError(null)
+    setConnecting(true)
+    try {
+      const wallet = await connectBaseAccount()
+      setLoginIdentity('base', wallet)
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Could not connect wallet.')
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  const chooseLocal = () => {
+    unlockAudio()
+    setAuthError(null)
+    setLoginIdentity(isTelegram() ? 'telegram' : 'guest')
+  }
 
   return (
     <div className="boot">
@@ -122,12 +175,44 @@ export function BootScreen() {
               </ul>
             </div>
 
+            <div className="boot__auth">
+              <div className="boot__auth-head">
+                <PixelIcon name={loginMethod === 'base' ? 'coin' : 'warden'} size={16} />
+                <span>{identityLine}</span>
+              </div>
+              <div className="boot__auth-actions">
+                <PixelButton
+                  label={connecting ? 'Connecting...' : 'Connect Base Account'}
+                  icon="coin"
+                  variant={loginMethod === 'base' ? 'gold' : 'wood'}
+                  size="sm"
+                  full
+                  disabled={connecting || !baseAccountAvailable()}
+                  sublabel={baseAccountAvailable() ? 'wallet identity' : 'open in wallet browser'}
+                  onClick={chooseBase}
+                />
+                <PixelButton
+                  label={telegramLabel}
+                  icon={isTelegram() ? 'warden' : 'terminal'}
+                  variant={loginMethod === 'telegram' || loginMethod === 'guest' ? 'teal' : 'ghost'}
+                  size="sm"
+                  full
+                  disabled={connecting}
+                  sublabel={telegramName}
+                  onClick={chooseLocal}
+                />
+              </div>
+              {authError ? <p className="boot__auth-error">{authError}</p> : null}
+            </div>
+
             <PixelButton
               label="Learn the Desk"
               icon="terminal"
               variant="gold"
               size="lg"
               full
+              disabled={!identityReady}
+              sublabel={identityReady ? 'start onboarding' : 'choose sign in first'}
               onClick={begin}
             />
           </>

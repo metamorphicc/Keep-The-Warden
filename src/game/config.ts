@@ -15,8 +15,8 @@ import type { IconName } from '../components/PixelIcon'
 /* ==========================================================================
    World
 
-   A paper-trading sim. No real money, no real book, no wallet. One room, one
-   desk, one beginner trying to become a quant trader.
+   A paper-trading sim. Wallets can identify a profile, but never place real
+   orders here. One room, one desk, one beginner trying to become a quant trader.
    ========================================================================== */
 
 export const GAME_VERSION = '2.0.0'
@@ -29,7 +29,7 @@ export const GAME_VERSION = '2.0.0'
 export const SAVE_KEY_PREFIX = 'ktw.save.v1:'
 export const SAVE_KEY_LEGACY = 'ktw.save.v1'
 export const CLOUD_SAVE_KEY = 'ktw_save_v1'
-export const SAVE_VERSION = 7
+export const SAVE_VERSION = 8
 
 /** Longest name the player may give him. */
 export const NAME_MAX = 18
@@ -930,6 +930,10 @@ export function freshSave(now: number): SaveData {
   return {
     version: SAVE_VERSION,
     name: WORLD.hero,
+    loginMethod: null,
+    walletAddress: null,
+    walletChainId: null,
+    walletConnectedAt: 0,
     onboarded: false,
     traderClass: null,
     stats: { edge: 40, focus: 62, heat: 18, rep: 8 },
