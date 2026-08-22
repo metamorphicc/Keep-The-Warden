@@ -252,11 +252,13 @@ export function setScreen(screen: ScreenId): void {
   setBackButton(screen === 'room' || screen === 'boot' ? null : () => setScreen('room'))
 }
 
-export function completeOnboarding(classId: TraderClassId): ActionResult {
+export function completeOnboarding(classId: TraderClassId, nameInput?: string): ActionResult {
   const klass = traderClassById(classId)
   if (!klass) return refusal('Pick a desk first.')
+  const name = nameInput !== undefined ? sanitizeName(nameInput) : getState().name
 
   setState({
+    name,
     onboarded: true,
     traderClass: klass.id,
     stats: addStats(klass.statBoost),

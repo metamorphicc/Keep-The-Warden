@@ -13,12 +13,14 @@ import {
   ACTIONS,
   BANKROLL_BAR,
   DESK_STAT_ORDER,
+  NAME_MAX,
   STAT_HIGH,
   STATS,
   TRADER_CLASSES,
   WORLD,
   careerStatusForLevel,
   levelFromXp,
+  sanitizeName,
 } from '../game/config'
 import { bankrollHealth, useGameState } from '../game/store'
 import { formatCash, formatSeconds } from '../game/util'
@@ -73,6 +75,7 @@ export function RoomScreen() {
   const s = useGameState()
   const [tutorialStep, setTutorialStep] = useState(0)
   const [pickedClass, setPickedClass] = useState<TraderClassId>('crypto')
+  const [nameDraft, setNameDraft] = useState(s.name)
   const now = Date.now()
   const day = Math.max(1, Math.floor((now - s.firstVisit) / 86_400_000) + 1)
   const stashCount = Object.values(s.stash).reduce((a, b) => a + b, 0)
@@ -296,27 +299,42 @@ export function RoomScreen() {
               <PixelIcon name="warden" size={28} />
             </div>
             <div className="tutorial__copy">
-              <p className="tutorial__name">Max</p>
+              <p className="tutorial__name">
+                {tutorial.target === 'class' ? sanitizeName(nameDraft) : s.name}
+              </p>
               <h2>{tutorial.title}</h2>
               <p>{tutorial.body}</p>
               {tutorial.target === 'class' ? (
-                <div className="classpick classpick--tutorial">
-                  {TRADER_CLASSES.map((klass) => (
-                    <button
-                      key={klass.id}
-                      type="button"
-                      className={`classpick__item ${pickedClass === klass.id ? 'is-on' : ''}`}
-                      onClick={() => setPickedClass(klass.id)}
-                      aria-pressed={pickedClass === klass.id}
-                    >
-                      <PixelIcon name={klass.icon} size={20} />
-                      <span>
-                        <b>{klass.name}</b>
-                        <small>{klass.desc}</small>
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <label className="classpick__name">
+                    <span>Trader name</span>
+                    <input
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      maxLength={NAME_MAX}
+                      spellCheck={false}
+                      autoComplete="off"
+                      autoCapitalize="words"
+                    />
+                  </label>
+                  <div className="classpick classpick--tutorial">
+                    {TRADER_CLASSES.map((klass) => (
+                      <button
+                        key={klass.id}
+                        type="button"
+                        className={`classpick__item ${pickedClass === klass.id ? 'is-on' : ''}`}
+                        onClick={() => setPickedClass(klass.id)}
+                        aria-pressed={pickedClass === klass.id}
+                      >
+                        <PixelIcon name={klass.icon} size={20} />
+                        <span>
+                          <b>{klass.name}</b>
+                          <small>{klass.desc}</small>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
               ) : null}
             </div>
             <div className="tutorial__actions">
@@ -333,7 +351,7 @@ export function RoomScreen() {
                 variant={tutorial.target === 'class' ? 'gold' : 'teal'}
                 size="sm"
                 onClick={() => {
-                  if (tutorial.target === 'class') completeOnboarding(pickedClass)
+                  if (tutorial.target === 'class') completeOnboarding(pickedClass, nameDraft)
                   else setTutorialStep((n) => Math.min(n + 1, TUTORIAL_STEPS.length - 1))
                 }}
               />
