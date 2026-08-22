@@ -12,8 +12,17 @@ import {
   freshSave,
   sanitizeName,
 } from './config'
-import type { LoginMethod, MarketState, SaveData, Stats, TraderClassId } from './types'
+import type {
+  AchievementId,
+  AchievementRecord,
+  LoginMethod,
+  MarketState,
+  SaveData,
+  Stats,
+  TraderClassId,
+} from './types'
 import { clamp } from './util'
+import { ACHIEVEMENT_BY_ID } from './achievements'
 import {
   cloudAvailable,
   cloudGet,
@@ -142,6 +151,7 @@ function migrate(input: Partial<SaveData>, base: SaveData): SaveData {
     walletConnectedAt: Math.max(0, num(input.walletConnectedAt, 0)),
     onboarded: typeof input.onboarded === 'boolean' ? input.onboarded : hadProgress,
     traderClass,
+    achievements: readAchievements(input.achievements),
     stats,
     bankroll,
     xp: Math.max(0, Math.floor(num(input.xp, base.xp))),
@@ -203,6 +213,24 @@ function readLoginMethod(v: unknown): LoginMethod | null {
   return v === 'base' || v === 'telegram' || v === 'guest' ? v : null
 }
 
+function readAchievements(input: unknown): Partial<Record<AchievementId, AchievementRecord>> {
+  if (!input || typeof input !== 'object') return {}
+  const achievements: Partial<Record<AchievementId, AchievementRecord>> = {}
+  for (const [id, raw] of Object.entries(input)) {
+    if (!(id in ACHIEVEMENT_BY_ID) || !raw || typeof raw !== 'object') continue
+    const record = raw as Partial<AchievementRecord>
+    const unlockedAt = Math.max(0, num(record.unlockedAt, 0))
+    if (unlockedAt <= 0) continue
+    achievements[id as AchievementId] = {
+      unlockedAt,
+      claimStatus: record.claimStatus === 'claimed' ? 'claimed' : 'unclaimed',
+      claimedAt: Math.max(0, num(record.claimedAt, 0)),
+      txHash: typeof record.txHash === 'string' && record.txHash.length > 0 ? record.txHash : null,
+    }
+  }
+  return achievements
+}
+
 function readWalletAddress(v: unknown): string | null {
   return typeof v === 'string' && /^0x[a-fA-F0-9]{40}$/.test(v) ? v : null
 }
@@ -261,6 +289,7 @@ export function writeSave(data: SaveData, immediateCloud = false): void {
     walletConnectedAt: data.walletConnectedAt,
     onboarded: data.onboarded,
     traderClass: data.traderClass,
+    achievements: data.achievements,
     stats: data.stats,
     bankroll: data.bankroll,
     xp: data.xp,

@@ -96,3 +96,31 @@ export function toast(text: string, tone: ToastTone = 'plain', sub?: string): vo
   const event: ToastEvent = { id: toastId++, text, tone, sub }
   for (const h of toastHandlers) h(event)
 }
+
+/* ==========================================================================
+   Achievement popups
+
+   Separate from normal toasts: unlocks should read like a collected badge,
+   not like another trade result.
+   ========================================================================== */
+
+export interface AchievementToastEvent {
+  id: number
+  name: string
+  desc: string
+}
+
+type AchievementToastHandler = (t: AchievementToastEvent) => void
+
+const achievementToastHandlers = new Set<AchievementToastHandler>()
+let achievementToastId = 1
+
+export function onAchievementToast(handler: AchievementToastHandler): () => void {
+  achievementToastHandlers.add(handler)
+  return () => achievementToastHandlers.delete(handler)
+}
+
+export function achievementToast(name: string, desc: string): void {
+  const event: AchievementToastEvent = { id: achievementToastId++, name, desc }
+  for (const h of achievementToastHandlers) h(event)
+}

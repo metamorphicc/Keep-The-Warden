@@ -117,16 +117,17 @@ export function poseFor({ activity, phase, t, stats }: PoseInput): Pose {
 
   switch (activity) {
     case 'pnl': {
-      // quick win reaction: hands pop up, market tokens flash
+      // quick desk check: phone/tablet up, one calm glance at the numbers
       const k = Math.sin(phase * Math.PI)
-      p.prop = 'chips'
-      p.armL = { x: -7 - k, y: 14 - k * 8 }
-      p.armR = { x: 7 + k, y: 14 - k * 8 }
-      p.headDrop = -1
-      p.eyes = phase < 0.5 ? 'wide' : 'open'
-      p.mouth = 'grin'
-      p.flash = phase < 0.45 ? 1 : 0
-      p.aura = Math.min(1, p.aura + 0.4 * k)
+      p.prop = 'slate'
+      p.armL = { x: -4 - k, y: 9 - k * 2 }
+      p.armR = { x: 7 + k, y: 13 - k }
+      p.headTilt = phase < 0.56 ? -1 : 0
+      p.headDrop = phase < 0.72 ? 1 : 0
+      p.eyes = phase > 0.34 && phase < 0.48 ? 'closed' : 'open'
+      p.mouth = 'flat'
+      p.flash = 0
+      p.aura = Math.min(1, p.aura + 0.16 * k)
       break
     }
 

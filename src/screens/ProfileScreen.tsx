@@ -6,7 +6,8 @@ import { PixelIcon, type IconName } from '../components/PixelIcon'
 import { PixelPanel } from '../components/PixelPanel'
 import { ScreenHeader } from '../components/ScreenHeader'
 import { WardenPlinth } from '../components/WardenPlinth'
-import { isAlarming, renameWarden, setScreen } from '../game/actions'
+import { claimAchievement, isAlarming, renameWarden, setScreen } from '../game/actions'
+import { ACHIEVEMENTS } from '../game/achievements'
 import {
   BANKROLL_BAR,
   DESK_STAT_ORDER,
@@ -21,9 +22,10 @@ import {
   xpProgress,
 } from '../game/config'
 import { bankrollHealth, overallForm, useGameState } from '../game/store'
-import type { EquipSlot } from '../game/types'
+import type { AchievementId, EquipSlot } from '../game/types'
 import { formatAway, formatCash, formatSigned } from '../game/util'
 import { cloudAvailable, tgUserId, tgUserName, tgUsername } from '../telegram/telegram'
+import { badgeClaimConfigured } from '../web3/baseAchievements'
 import { shortAddress } from '../web3/baseAccount'
 
 /* ==========================================================================
@@ -37,6 +39,7 @@ export function ProfileScreen() {
   const s = useGameState()
   const [renaming, setRenaming] = useState(false)
   const [draft, setDraft] = useState(s.name)
+  const [claiming, setClaiming] = useState<string | null>(null)
 
   const daysHeld = Math.max(1, Math.floor((Date.now() - s.firstVisit) / 86_400_000) + 1)
   const form = Math.round(overallForm(s.stats))
@@ -51,6 +54,8 @@ export function ProfileScreen() {
   // A Telegram account id is what namespaces the save. No id means we are in a
   // plain browser (or a client that hides the user), whatever the SDK claims.
   const linked = tgUserId() !== null
+  const unlockedBadges = ACHIEVEMENTS.filter((badge) => s.achievements[badge.id]).length
+  const claimReady = s.loginMethod === 'base' && Boolean(s.walletAddress)
 
   const telegramKeeper = (() => {
     const first = tgUserName()
@@ -86,6 +91,12 @@ export function ProfileScreen() {
   function commitRename(): void {
     renameWarden(draft)
     setRenaming(false)
+  }
+
+  async function claimBadge(id: AchievementId): Promise<void> {
+    setClaiming(id)
+    await claimAchievement(id)
+    setClaiming(null)
   }
 
   return (
@@ -229,6 +240,60 @@ export function ProfileScreen() {
             />
           </ul>
           <p className="t-label t-dim">{syncNote}</p>
+        </PixelPanel>
+
+        <PixelPanel
+          variant="darkwood"
+          title="Onchain Badges"
+          titleIcon="star"
+          pad="md"
+          rivets
+          titleRight={
+            <span className="t-label t-dim">
+              {unlockedBadges}/{ACHIEVEMENTS.length}
+            </span>
+          }
+        >
+          <div className="badges">
+            {ACHIEVEMENTS.map((badge) => {
+              const record = s.achievements[badge.id]
+              const unlocked = Boolean(record)
+              const claimed = record?.claimStatus === 'claimed'
+              const busy = claiming === badge.id
+              return (
+                <div
+                  key={badge.id}
+                  className={`badgecard badgecard--${badge.rarity} ${unlocked ? 'is-unlocked' : 'is-locked'}`}
+                >
+                  <div className="badgecard__icon">
+                    <PixelIcon name={unlocked ? badge.icon : 'lock'} size={18} />
+                  </div>
+                  <div className="badgecard__body">
+                    <b>{badge.name}</b>
+                    <span>{badge.desc}</span>
+                    <small>
+                      ERC-1155 #{badge.tokenId} -{' '}
+                      {claimed ? 'claimed' : unlocked ? 'free claim' : 'locked'}
+                    </small>
+                  </div>
+                  <PixelButton
+                    label={claimed ? 'Claimed' : busy ? 'Claiming' : 'Claim'}
+                    icon={claimed ? 'check' : 'coin'}
+                    variant={claimed ? 'ghost' : unlocked && claimReady ? 'teal' : 'ghost'}
+                    size="sm"
+                    disabled={!unlocked || claimed || busy}
+                    onClick={() => void claimBadge(badge.id)}
+                  />
+                </div>
+              )
+            })}
+          </div>
+          <p className="t-label t-dim">
+            Badges are free mints. The mint contract/signer still needs deployment
+            {badgeClaimConfigured()
+              ? '; Base Account can send claims now.'
+              : ' before claims can create real NFTs.'}
+          </p>
         </PixelPanel>
 
         <PixelPanel variant="wood" title="The rig" titleIcon="helm" pad="md" rivets>

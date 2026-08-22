@@ -14,14 +14,14 @@ declare global {
   }
 }
 
-function provider(): EthereumProvider | null {
+export function baseProvider(): EthereumProvider | null {
   return window.ethereum && typeof window.ethereum.request === 'function'
     ? window.ethereum
     : null
 }
 
 export function baseAccountAvailable(): boolean {
-  return provider() !== null
+  return baseProvider() !== null
 }
 
 export function shortAddress(address: string | null): string {
@@ -30,7 +30,7 @@ export function shortAddress(address: string | null): string {
 }
 
 export async function connectBaseAccount(): Promise<BaseAccountConnection> {
-  const eth = provider()
+  const eth = baseProvider()
   if (!eth) {
     throw new Error('No wallet found. Open in Base App or a browser with Coinbase Wallet.')
   }

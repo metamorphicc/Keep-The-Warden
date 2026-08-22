@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { AchievementToasts } from './components/AchievementToasts'
 import { Toast } from './components/Toast'
 import { saveNow, syncFromCloud } from './game/actions'
 import { tick, useGame } from './game/store'
@@ -67,6 +68,7 @@ export function App() {
       {screen === 'shop' ? <ShopScreen /> : null}
       {screen === 'profile' ? <ProfileScreen /> : null}
       {screen === 'settings' ? <SettingsScreen /> : null}
+      <AchievementToasts />
       <Toast />
     </div>
   )

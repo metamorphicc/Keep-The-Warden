@@ -49,6 +49,7 @@ function saveSlice(): SaveData {
     walletConnectedAt: state.walletConnectedAt,
     onboarded: state.onboarded,
     traderClass: state.traderClass,
+    achievements: state.achievements,
     stats: state.stats,
     bankroll: state.bankroll,
     xp: state.xp,

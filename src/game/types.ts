@@ -106,6 +106,44 @@ export interface TraderClassDef {
 }
 
 /* ==========================================================================
+   Achievements / onchain badge prep
+   ========================================================================== */
+
+export type AchievementId =
+  | 'first-desk'
+  | 'base-linked'
+  | 'first-scan'
+  | 'first-ticket'
+  | 'first-win'
+  | 'zero-recovery'
+  | 'ten-wins'
+  | 'hundred-tickets'
+  | 'level-5'
+  | 'level-10'
+  | 'level-15'
+  | 'level-20'
+  | 'level-25'
+  | 'level-30'
+
+export type AchievementClaimStatus = 'unclaimed' | 'claimed'
+
+export interface AchievementDef {
+  id: AchievementId
+  tokenId: number
+  name: string
+  desc: string
+  icon: IconName
+  rarity: 'common' | 'rare' | 'epic'
+}
+
+export interface AchievementRecord {
+  unlockedAt: number
+  claimStatus: AchievementClaimStatus
+  claimedAt: number
+  txHash: string | null
+}
+
+/* ==========================================================================
    Items
    ========================================================================== */
 
@@ -239,6 +277,8 @@ export interface SaveData {
   /** first-run guide + class choice */
   onboarded: boolean
   traderClass: TraderClassId | null
+  /** achievement id -> unlock/claim state. Claim maps to future Base badges. */
+  achievements: Partial<Record<AchievementId, AchievementRecord>>
   stats: Stats
   /** simulated cash. Not real money. Never was. */
   bankroll: number

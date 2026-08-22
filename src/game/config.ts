@@ -29,7 +29,7 @@ export const GAME_VERSION = '2.0.0'
 export const SAVE_KEY_PREFIX = 'ktw.save.v1:'
 export const SAVE_KEY_LEGACY = 'ktw.save.v1'
 export const CLOUD_SAVE_KEY = 'ktw_save_v1'
-export const SAVE_VERSION = 8
+export const SAVE_VERSION = 9
 
 /** Longest name the player may give him. */
 export const NAME_MAX = 18
@@ -936,6 +936,7 @@ export function freshSave(now: number): SaveData {
     walletConnectedAt: 0,
     onboarded: false,
     traderClass: null,
+    achievements: {},
     stats: { edge: 40, focus: 62, heat: 18, rep: 8 },
     bankroll: START_BANKROLL,
     xp: 0,

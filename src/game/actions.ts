@@ -21,8 +21,9 @@ import {
   refusal,
   sanitizeName,
 } from './config'
+import { ACHIEVEMENT_BY_ID, eligibleAchievementIds, type AchievementContext } from './achievements'
 import { COPY } from './copy'
-import { burst, emitFx, floatText, toast } from './fx'
+import { achievementToast, burst, emitFx, floatText, toast } from './fx'
 import {
   clearSave,
   flushSave,
@@ -41,6 +42,7 @@ import {
 import type {
   ActionResult,
   ActivityKind,
+  AchievementId,
   Currency,
   EquipSlot,
   LoginMethod,
@@ -55,6 +57,7 @@ import type {
   TraderClassId,
 } from './types'
 import { chance, formatCash, formatSigned, lerp, randFloat } from './util'
+import { claimBaseAchievementBadge } from '../web3/baseAchievements'
 import {
   haptic,
   hapticNotify,
@@ -115,6 +118,31 @@ function showCredits(delta: number): void {
   floatText(`+${delta} ${WORLD.creditName}`, 'credit')
   play('shard')
   burst('spark', { count: 10, power: 1.3 })
+}
+
+function unlockAchievements(context: AchievementContext = {}): void {
+  const before = getState()
+  const ids = eligibleAchievementIds(before, context)
+  if (ids.length === 0) return
+
+  const now = Date.now()
+  const achievements = { ...before.achievements }
+  for (const id of ids) {
+    achievements[id] = {
+      unlockedAt: now,
+      claimStatus: 'unclaimed',
+      claimedAt: 0,
+      txHash: null,
+    }
+  }
+
+  setState({ achievements })
+
+  for (const id of ids) {
+    const def = ACHIEVEMENT_BY_ID[id]
+    achievementToast(def.name, def.desc)
+    toast('Achievement unlocked', 'good', def.name)
+  }
 }
 
 /* ==========================================================================
@@ -231,6 +259,7 @@ export function completeOnboarding(classId: TraderClassId): ActionResult {
     markets: [],
     marketsAt: 0,
   })
+  unlockAchievements()
   toast('Desk picked', 'good', `${klass.short} markets will show up more often`)
   enterHall()
   say(`${klass.name}. First lesson: survive the first hundred tickets.`)
@@ -380,6 +409,7 @@ export function doAction(actionId: string): ActionResult {
     // a live hedge dampens the next fill in both directions
     hedgeUntil: actionId === 'hedge' ? Date.now() + BET.hedgeWindowMs : s.hedgeUntil,
   })
+  unlockAchievements({ zeroRecovered: actionId === 'sidejob' && s.bankroll <= 0 && cash > 0 })
 
   startActivity(actionId as ActivityKind, def.duration ?? 1200)
   setCooldown(actionId, def.cooldown ?? 0)
@@ -573,6 +603,7 @@ export function doScan(): ActionResult {
     marketsAt: now,
     tally: { ...s.tally, scans: s.tally.scans + 1 },
   })
+  unlockAchievements()
 
   startActivity('scan', 1200)
   setCooldown('scan', MARKET.cooldown)
@@ -711,6 +742,7 @@ function resolveFill(result: TradeResult): void {
       worstLoss: Math.max(s.tally.worstLoss, Math.max(0, -result.pnl)),
     },
   })
+  unlockAchievements()
 
   showCash(result.pnl)
   showGains(gain)
@@ -855,8 +887,51 @@ export function setLoginIdentity(
     walletChainId: wallet?.chainId ?? null,
     walletConnectedAt: wallet ? Date.now() : 0,
   })
+  unlockAchievements()
   play('click')
   buzz('light')
+}
+
+export async function claimAchievement(id: AchievementId): Promise<ActionResult> {
+  const def = ACHIEVEMENT_BY_ID[id]
+  if (!def) return refusal('Unknown badge.')
+
+  const s = getState()
+  const record = s.achievements[id]
+  if (!record) return refusal('Unlock it in-game first.')
+  if (record.claimStatus === 'claimed') return refusal('Already claimed.')
+  if (s.loginMethod !== 'base' || !s.walletAddress) {
+    const msg = 'Connect Base Account before claiming onchain badges.'
+    toast('Base Account needed', 'bad', msg)
+    play('deny')
+    notify('warning')
+    return refusal(msg)
+  }
+
+  try {
+    const txHash = await claimBaseAchievementBadge(def, s.walletAddress)
+    setState((state) => ({
+      achievements: {
+        ...state.achievements,
+        [id]: {
+          ...record,
+          claimStatus: 'claimed',
+          claimedAt: Date.now(),
+          txHash,
+        },
+      },
+    }))
+    toast('Badge claimed', 'good', def.name)
+    play('fanfare')
+    notify('success')
+    return { ok: true, message: txHash }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Claim failed.'
+    toast('Claim not sent', 'bad', msg)
+    play('deny')
+    notify('error')
+    return refusal(msg)
+  }
 }
 
 /* ==========================================================================
